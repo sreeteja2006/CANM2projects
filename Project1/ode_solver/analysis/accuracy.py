@@ -2,6 +2,10 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
+<<<<<<< Updated upstream
+=======
+from pathlib import Path
+>>>>>>> Stashed changes
 import matplotlib.pyplot as plt
 from core.core import odesolver
 from methods.RK_2 import RK2
@@ -9,12 +13,35 @@ from methods.RK_4 import RK4
 from methods.ABM_2 import ABM2
 from methods.ABM_4 import ABM4
 
+<<<<<<< Updated upstream
+=======
+# Try to load precomputed analytical solution values from y_rk2.txt
+_y_data = None
+_x_data = None
+data_path = Path(__file__).resolve().parent / "y_rk2.txt"
+if data_path.exists():
+    try:
+        loaded = np.loadtxt(data_path)
+        if loaded.ndim == 1:
+            _y_data = loaded
+        elif loaded.ndim == 2:
+            if loaded.shape[1] == 1:
+                _y_data = loaded.flatten()
+            else:
+                _x_data = loaded[:, 0]
+                _y_data = loaded[:, 1]
+    except Exception:
+        _y_data = None
+        _x_data = None
+
+>>>>>>> Stashed changes
 def f(u, x):
     return np.array([u[1], -u[1]**2/(u[0] + 1e-4)])
 
 eps = 1e-3
 bc = ((1, 0, 0), (1, 0, -1))
 
+<<<<<<< Updated upstream
 def analytical_solution(x, eps=0):
     return (np.sqrt(100020000*(x) + 1) - 1)
 
@@ -93,6 +120,69 @@ plt.legend()
 plt.tight_layout()
 # save figure to PNG next to this script (use high DPI)
 outpath = os.path.join(os.path.dirname(__file__), 'accuracy_plot.png')
+=======
+def analytical_solution(x, small=1e-4):
+    # Use precomputed data from y_rk2.txt if available, otherwise fall back
+    # to the analytical formula.
+    global _y_data, _x_data
+    x_arr = np.asarray(x)
+    scalar_input = False
+    if x_arr.ndim == 0:
+        scalar_input = True
+        x_arr = x_arr[np.newaxis]
+
+    if '_y_data' in globals() and _y_data is not None:
+        if _x_data is not None:
+            y_interp = np.interp(x_arr, _x_data, _y_data)
+            return y_interp[0] if scalar_input else y_interp
+        if _y_data.shape[0] == x_arr.shape[0]:
+            return _y_data[0] if scalar_input else _y_data
+
+    result = small * (np.sqrt(100020000 * x_arr + 1) - 1)
+    return result[0] if scalar_input else result
+
+
+ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
+
+# Methods and labels
+methods = [(RK2, 'RK2'), (RK4, 'RK4'), (ABM2, 'ABM2'), (ABM4, 'ABM4')]
+
+# Step sizes to test
+h_values = [1e-3, 1e-4, 1e-5, 1e-6]
+
+# Keep originals to restore later
+original_h = ob.get_h()
+original_method = ob.get_method()
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 8), constrained_layout=True)
+axes = axes.flatten()
+
+for idx, (method, name) in enumerate(methods):
+    ax = axes[idx]
+    for h in h_values:
+        ob.set_method(method)
+        ob.set_h(h)
+        sol, x, _, blew, _ = ob.solve()
+        if blew:
+            print(f"Method {name} blew up at h={h}; skipping")
+            continue
+        y_analytical_on_x = analytical_solution(x)
+        error = np.abs(sol[:, 0] - y_analytical_on_x)
+        ax.plot(x, error, label=f'h={h}')
+
+    ax.set_title(f'Absolute Error |y_numerical - y_analytical| ({name})')
+    ax.set_xlabel('x')
+    ax.set_ylabel('Absolute Error')
+    ax.legend(fontsize='small')
+    ax.grid(True)
+
+# Restore solver state
+ob.set_method(original_method)
+ob.set_h(original_h)
+
+# Save and show
+outpath = os.path.join(os.path.dirname(__file__), 'accuracy_error_plot.png')
+>>>>>>> Stashed changes
 plt.savefig(outpath, dpi=300)
 plt.show()
 
