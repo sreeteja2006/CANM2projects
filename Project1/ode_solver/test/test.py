@@ -1,5 +1,9 @@
-import numpy as np
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.core import odesolver
+from methods.RK_2 import RK2
+import numpy as np
 from methods.RK_2 import RK2
 import matplotlib.pyplot as plt
 from methods.RK_4 import RK4
