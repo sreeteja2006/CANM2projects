@@ -32,13 +32,11 @@ def compute_R(method, s, h=0.001):
 def secant_solve(method, s0, s1, h=0.001, tol=1e-8, max_iter=20):
     R0 = compute_R(method, s0, h)
     R1 = compute_R(method, s1, h)
-    
     for i in range(max_iter):
         if np.isinf(R0) or np.isinf(R1):
             return np.nan, i, False
         if abs(R1 - R0) < 1e-15:
             return np.nan, i, False
-        
         s2 = s1 - R1 * (s1 - s0) / (R1 - R0)
         if s2 < 0.01 or s2 > 500:
             return np.nan, i, False
@@ -46,7 +44,6 @@ def secant_solve(method, s0, s1, h=0.001, tol=1e-8, max_iter=20):
         
         if abs(R2) < tol:
             return s2, i+1, True
-        
         s0, s1 = s1, s2
         R0, R1 = R1, R2
     
@@ -133,4 +130,3 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("Running IVP Stability Analysis...")
     print("=" * 70)
-    plot_ivp_stability()
