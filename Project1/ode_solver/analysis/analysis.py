@@ -123,37 +123,51 @@ class analysis:
         methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
 
         errors = np.zeros((len(methods), len(h_values)))
+        
+        # Setup plotting grid: rows = methods, columns = 2 (1 for Solutions, 1 for Convergence)
+        fig, axes = plt.subplots(len(methods), 1, figsize=(10, 4 * len(methods)), constrained_layout=True)
 
         for i, method in enumerate(methods):
             self.solver.set_method(method)
+            ax = axes[i] # Current subplot for this method
 
             for j, h in enumerate(h_values):
                 self.solver.set_h(h)
                 u, x, _, blew, _ = self.solver.solve()
 
-            if blew:
-                errors[i, j] = np.nan
-                continue
+                if blew:
+                    errors[i, j] = np.nan
+                    print(f"Method {methods_str[i]} blew up at h={h}")
+                    continue
 
-            analytical_values = self.analytical_solution(x)
-            errors[i, j] = self.normalized_error(u[:, 0], analytical_values)
+                # --- Calculate Error ---
+                analytical_values = self.analytical_solution(x)
+                errors[i, j] = self.normalized_error(u[:, 0], analytical_values)
 
-        # restore solver state
+                # --- Plot Solution for this h ---
+                ax.plot(x, u[:, 0], label=f'h={h}')
+            
+            # Formatting the Solution plot for the current method
+            ax.set_title(f"Solutions for {methods_str[i]}")
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.legend(fontsize='small', loc='upper right')
+            ax.grid(True)
+
+        # Restore solver state
         self.solver.set_method(original_method)
         self.solver.set_h(original_h)
 
-        print("\nConvergence Test:")
-        for i, name in enumerate(methods_str):
-            print(f"{name}: Errors = {errors[i]}")
-            
-        # Plot convergence for each method
+        # Separate Figure for the Log-Log Convergence plot
+        plt.figure(figsize=(8, 6))
         for i, name in enumerate(methods_str):
             plt.loglog(h_values, errors[i], marker='o', label=name)
+        
         plt.xlabel('Step size (h)')
         plt.ylabel('Error')
-        plt.title('Convergence Test: Method Comparison')
+        plt.title('Convergence Summary (Log-Log)')
         plt.legend()
-        plt.grid(True)
+        plt.grid(True, which="both", ls="-")
         plt.show()
 
         return errors

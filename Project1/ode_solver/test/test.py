@@ -1,11 +1,9 @@
 import sys
 import os
-
-
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import numpy as np
-from Project1.ode_solver.core.core import odesolver
-from methods.ABM_4 import ABM4
+from core.core import odesolver
 from methods.RK_2 import RK2
 import matplotlib.pyplot as plt
 from methods.RK_4 import RK4
@@ -45,6 +43,6 @@ ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f, gue
 
 # Create analysis object and test accuracy
 analyzer = analysis(ob)
-h = [0.5,0.1,0.01,0.001,0.0001,0.00001]
-analyzer.accuracy_bvp()
+h = [0.1,0.01,0.001,0.0001,0.00001]
+analyzer.Convergence_test(h_values=h)
 # print(f"Analytical Accuracy: {accuracy}")

@@ -2,7 +2,7 @@ import numpy as np
 
 class odesolver:
     
-    def __init__(self, order, method, bc, tol, max_iter, func, guess, xstart, xend, h, blowup=False):
+    def __init__(self, order, method, bc, tol, max_iter, func, xstart, xend, h, blowup=False,guess = [69,420]):
         self.order = order
         self.bc = bc
         self.tol = tol
@@ -90,7 +90,7 @@ class odesolver:
             eps_offset = 1e-3
             print(f"Using eps method: starting from x = {self.xstart + eps_offset}")
             
-            s0, s1 = 200,400
+            s0, s1 = self.guess[0], self.guess[1]
             F0 = self.F(s0, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
             F1 = self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
             
