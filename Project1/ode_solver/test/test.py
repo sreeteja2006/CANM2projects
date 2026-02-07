@@ -51,3 +51,6 @@ for name, data in results.items():
     print(f"  Std dev      : {data['order_std']:.3f}")
 
 analyzer.plot_loglog_convergence(results)
+h = [0.1,0.01,0.001,0.0001,0.00001]
+analyzer.Convergence_test(h_values=h)
+# print(f"Analytical Accuracy: {accuracy}")
