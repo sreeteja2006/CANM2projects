@@ -43,11 +43,11 @@ plt.figure(figsize=(10, 6))
 # RK2 subplot
 plt.subplot(2, 2, 1)
 delta = sol_RK2[0, 0] - sol_analytical_on_x[0]
-<<<<<<< Updated upstream
-plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
-=======
+# <<<<<<< Updated upstream
+# plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
+# =======
 plt.plot(x, sol_RK2[300:, 0], label='RK2', linestyle='--')
->>>>>>> Stashed changes
+# >>>>>>> Stashed changes
 plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
 plt.title('RK2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
@@ -57,11 +57,9 @@ plt.legend()
 # RK4 subplot
 plt.subplot(2, 2, 2)
 delta = sol_RK4[0, 0] - sol_analytical_on_x[0]
-<<<<<<< Updated upstream
-plt.plot(x, sol_RK4[:, 0], label='RK4', linestyle='--')
-=======
+# =======
 plt.plot(x, sol_RK4[200:, 0], label='RK4', linestyle='--')
->>>>>>> Stashed changes
+# >>>>>>> Stashed changes
 plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
 plt.title('RK4 Solution vs Analytical (aligned)')
 plt.xlabel('x')
@@ -71,11 +69,11 @@ plt.legend()
 # ABM2 subplot
 plt.subplot(2, 2, 3)
 delta = sol_ABM2[0, 0] - sol_analytical_on_x[0]
-<<<<<<< Updated upstream
-plt.plot(x, sol_ABM2, label='ABM2', linestyle='--')
-=======
+# <<<<<<< Updated upstream
+# plt.plot(x, sol_ABM2, label='ABM2', linestyle='--')
+# =======
 plt.plot(x, sol_ABM2[100:,0], label='ABM2', linestyle='--')
->>>>>>> Stashed changes
+# >>>>>>> Stashed changes
 plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
 plt.title('ABM2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
