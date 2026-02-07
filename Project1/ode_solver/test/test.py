@@ -41,7 +41,6 @@ solution, x,_,_,_ = ob.solve()
 # plt.grid(True)
 # plt.show()
 
-# Create analysis object and test accuracy
 analyzer = analysis(ob)
 results = analyzer.h_refinement(1e-3)
 for name, data in results.items():
