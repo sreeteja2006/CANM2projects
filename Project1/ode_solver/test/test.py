@@ -1,11 +1,10 @@
 import sys
 import os
 
-# Add the parent directory to the path for module imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 import numpy as np
-from core.core import odesolver
+from Project1.ode_solver.core.core import odesolver
 from methods.ABM_4 import ABM4
 from methods.RK_2 import RK2
 import matplotlib.pyplot as plt
