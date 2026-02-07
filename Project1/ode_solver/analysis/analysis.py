@@ -7,167 +7,89 @@ from methods.RK_4 import RK4
 from core.core import odesolver
 import matplotlib.pyplot as plt
 
+
 class analysis:
-    def __init__(self, solver: odesolver):
+    
+    def __init__(self, solver : odesolver):
         self.solver = solver
 
-    def convergence_rate(self, h_values, errors):
-        log_h = np.log(h_values)
-        log_errors = np.log(errors)
-        coeffs = np.polyfit(log_h, log_errors, 1)
-        return coeffs[0]
+    def value_at_x(self, x, y, x_star, component=0):
+        idx = np.argmin(np.abs(x - x_star))
+        return y[idx][component]
+
     
-    def analytical_solution(self, x):
-        return 1e-4 * (np.sqrt(100020000*x + 1) - 1)
-    
-    def normalized_error(self, numerical_values, analytical_values):
-        return np.linalg.norm(numerical_values - analytical_values, ord=np.inf) / np.linalg.norm(analytical_values, ord=np.inf)
-    
-    def accuracy_analytical(self):
-        original_h = self.solver.get_h()
-        original_method = self.solver.get_method()   # MUST be a function
-        original_tol = self.solver.get_tol()
-        self.solver.set_tol(1e-12)  # Set a very tight tolerance for accuracy testing
-        methods = [RK2, RK4, ABM2, ABM4]
-        methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
-
-        error = np.zeros((len(methods), 2))
-
-        for i, method in enumerate(methods):
-
-            # ---- set method safely ----
-            if not callable(method):
-                raise TypeError(f"Method {method} is not callable")
-            self.solver.set_method(method)
-
-            # ---- solve with h ----
-            self.solver.set_h(original_h)
-            numerical_values, x_temp, _, _, _ = self.solver.solve()
-            analytical_values = self.analytical_solution(x_temp)
-            error[i, 0] = self.normalized_error(
-                numerical_values[:, 0], analytical_values
-            )
-
-            # ---- solve with h/2 ----
-            self.solver.set_h(original_h / 2)
-            numerical_values, x_temp, _, _, _ = self.solver.solve()
-            analytical_values = self.analytical_solution(x_temp)
-            error[i, 1] = self.normalized_error(
-                numerical_values[:, 0], analytical_values
-            )
-
-            # ---- restore h before next method ----
-            self.solver.set_h(original_h)
-
-        # ---- restore original solver state ----
-        self.solver.set_method(original_method)
-        self.solver.set_h(original_h)
-
-        # ---- print convergence order ----
-        for i, name in enumerate(methods_str):
-            order = np.log(error[i, 0] / error[i, 1]) / np.log(2)
-
-            print(
-                f"Method: {name}, "
-                f"Error(h): {error[i,0]:.2e}, "
-                f"Error(h/2): {error[i,1]:.2e}, "
-                f"Observed order: {order:.2f}"
-            )
-
-        return error
-    def accuracy_bvp(self):
+    def h_refinement_test(self, x_star):
+        """
+        Compute observed order using Q(h) = y_h(x_star)
+        """
         original_h = self.solver.get_h()
         original_method = self.solver.get_method()
 
-        methods = [RK2, RK4, ABM2, ABM4]
-        methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
-
-        error = np.zeros(len(methods))
-
-        ystart, yend, bc_type = self.solver.bcs()
-
-        for i, method in enumerate(methods):
-            self.solver.set_method(method)
-            self.solver.set_h(original_h)
-
-            u, x, s, blew, _ = self.solver.solve()
-
-            if blew:
-                error[i] = np.nan
-                continue
-
-            # Boundary residual only
-            if bc_type in ("dd", "nd"):
-                error[i] = abs(u[-1, 0] - yend)
-            else:
-                error[i] = abs(u[-1, 1] - yend)
-
-        # restore solver state
-        self.solver.set_method(original_method)
-        self.solver.set_h(original_h)
-
-        print("\nBVP Accuracy (boundary satisfaction):")
-        for i, name in enumerate(methods_str):
-            print(
-                f"{name}: "
-                f"Boundary residual = {error[i]:.2e}"
-            )
-
-        return error
-    
-    def Convergence_test(self, h_values):
-        original_h = self.solver.get_h()
-        original_method = self.solver.get_method()
+        h_values = [original_h / (2**i) for i in range(3)]  # h, h/2, h/4
 
         methods = [RK2, RK4, ABM2, ABM4]
-        methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
+        method_names = ['RK2', 'RK4', 'ABM2', 'ABM4']
 
-        errors = np.zeros((len(methods), len(h_values)))
-        
-        # Setup plotting grid: rows = methods, columns = 2 (1 for Solutions, 1 for Convergence)
-        fig, axes = plt.subplots(len(methods), 1, figsize=(10, 4 * len(methods)), constrained_layout=True)
+        results = {}
 
-        for i, method in enumerate(methods):
+        for method, name in zip(methods, method_names):
             self.solver.set_method(method)
-            ax = axes[i] # Current subplot for this method
 
-            for j, h in enumerate(h_values):
+            Q = []
+
+            for h in h_values:
                 self.solver.set_h(h)
-                u, x, _, blew, _ = self.solver.solve()
+                solution, x, _, blew, _ = self.solver.solve()
 
-                if blew:
-                    errors[i, j] = np.nan
-                    print(f"Method {methods_str[i]} blew up at h={h}")
-                    continue
+                if blew or solution is None:
+                    Q.append(np.nan)
+                else:
+                    Q.append(self.value_at_x(x, solution, x_star))
 
-                # --- Calculate Error ---
-                analytical_values = self.analytical_solution(x)
-                errors[i, j] = self.normalized_error(u[:, 0], analytical_values)
+            Q = np.array(Q)
 
-                # --- Plot Solution for this h ---
-                ax.plot(x, u[:, 0], label=f'h={h}')
-            
-            # Formatting the Solution plot for the current method
-            ax.set_title(f"Solutions for {methods_str[i]}")
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
-            ax.legend(fontsize='small', loc='upper right')
-            ax.grid(True)
+            if np.any(np.isnan(Q)):
+                k = np.nan
+            else:
+                num = Q[1] - Q[2]     # Q_{h/2} - Q_{h/4}
+                den = Q[0] - Q[1]     # Q_h - Q_{h/2}
+
+                if num == 0 or den == 0:
+                    k = np.nan
+                else:
+                    k = np.log2(abs(num / den))
+
+            results[name] = {
+                "h_values": h_values,
+                "Q_values": Q,
+                "order": k
+            }
 
         # Restore solver state
         self.solver.set_method(original_method)
         self.solver.set_h(original_h)
 
-        # Separate Figure for the Log-Log Convergence plot
-        plt.figure(figsize=(8, 6))
-        for i, name in enumerate(methods_str):
-            plt.loglog(h_values, errors[i], marker='o', label=name)
-        
-        plt.xlabel('Step size (h)')
-        plt.ylabel('Error')
-        plt.title('Convergence Summary (Log-Log)')
-        plt.legend()
-        plt.grid(True, which="both", ls="-")
-        plt.show()
+        return results
 
-        return errors
+    def plot_loglog_convergence(self,results):
+        plt.figure(figsize=(8, 6))
+
+        for name, data in results.items():
+            h = np.array(data["h_values"])
+            Q = np.array(data["Q_values"])
+
+            if np.any(np.isnan(Q)):
+                continue
+
+            Q_ref = Q[-1]                  # finest grid
+            error = np.abs(Q[:-1] - Q_ref)
+            h_plot = h[:-1]
+
+            plt.loglog(h_plot, error, 'o-', label=name)
+
+        plt.xlabel("h")
+        plt.ylabel(r"$|y_h(x^*) - y_{ref}(x^*)|$")
+        plt.title("Log–Log Convergence at Fixed x*")
+        plt.grid(True, which="both")
+        plt.legend()
+        plt.show()
