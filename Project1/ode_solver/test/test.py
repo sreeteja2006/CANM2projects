@@ -1,8 +1,3 @@
-import sys
-import os
-
-
-
 import numpy as np
 from Project1.ode_solver.core.core import odesolver
 from methods.ABM_4 import ABM4
@@ -20,9 +15,9 @@ bc = ((1, 0, 0), (1, 0, -1))
 
 def analytical_solution(x):
     return 1e-4 * (np.sqrt(100020000*x + 1) - 1)
-ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=0.5, xstart=0, xend=1, h=1e-5)
 
-# solution, x,_,_,_ = ob.solve()
+ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=0.5, xstart=0, xend=1, h=1e-5)
+solution, x,_,_,_ = ob.solve()
 
 # error = np.abs(solution[:, 0] - analytical_solution(x))
 # print(f"Max error: {np.max(error)}")
