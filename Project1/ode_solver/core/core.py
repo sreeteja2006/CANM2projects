@@ -1,6 +1,7 @@
 import numpy as np
 
 class odesolver:
+    
     def __init__(self, order, method, bc, tol, max_iter, func, guess, xstart, xend, h, blowup=False):
         self.order = order
         self.bc = bc
@@ -13,7 +14,7 @@ class odesolver:
         self.h = h
         self.method = method
         self.blowup = blowup
-    
+
     def bcs(self, eps=1e-14):
         a0, b0, c0 = self.bc[0]
         a1, b1, c1 = self.bc[1]
@@ -102,7 +103,6 @@ class odesolver:
                 if F1 >= 1e15 or F0 >= 1e15 or np.isnan(F1) or np.isnan(F0) or abs(F1 - F0) < 1e-15:
                     print(f"Eps method also failed at iteration {j}. Using best guess.")
                     use_eps = False
-                    self.method = self.method.__globals__.get(self.method.__name__ + "_backward", self.method)
                     break
                 
                 s_new = s1 - F1 * (s1 - s0) / (F1 - F0)
@@ -125,7 +125,74 @@ class odesolver:
 
         u, x, blew = self.method(self, u0)
         return u, x, s, blew, bc_type
-            
+
+    def get_order(self):
+        return self.order
+
+    def set_order(self, order):
+        self.order = order
+
+    def get_method(self):
+        return self.method
+
+    def set_method(self, method):
+        if not callable(method):
+            raise TypeError(f"Method must be callable, got {method} ({type(method)})")
+        self.method = method
+
+    def get_bc(self):
+        return self.bc
+
+    def set_bc(self, bc):
+        self.bc = bc
+
+    def get_tol(self):
+        return self.tol
+
+    def set_tol(self, tol):
+        self.tol = tol
+
+    def get_max_iter(self):
+        return self.max_iter
+
+    def set_max_iter(self, max_iter):
+        self.max_iter = max_iter
+
+    def get_func(self):
+        return self.func
+
+    def set_func(self, func):
+        self.func = func
+
+    def get_guess(self):
+        return self.guess
+
+    def set_guess(self, guess):
+        self.guess = guess
+
+    def get_xstart(self):
+        return self.xstart
+
+    def set_xstart(self, xstart):
+        self.xstart = xstart
+
+    def get_xend(self):
+        return self.xend
+
+    def set_xend(self, xend):
+        self.xend = xend
+
+    def get_h(self):
+        return self.h
+
+    def set_h(self, h):
+        self.h = h
+
+    def get_blowup(self):
+        return self.blowup
+
+    def set_blowup(self, blowup):
+        self.blowup = blowup
 
 
     
