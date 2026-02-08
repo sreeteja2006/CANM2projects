@@ -76,6 +76,85 @@ def compute_condition_number_2d(method, s0, s1, h=0.001):
     
     return kappa_s0, kappa_s1, kappa_2d, s_star
 
+# IVP stability functions
+def rk2_stability_function(z):
+    return 1 + z + 0.5 * z**2
+
+
+def rk4_stability_function(z):
+    return 1 + z + 0.5 * z**2 + (z**3) / 6 + (z**4) / 24
+
+
+def abm2_max_root(z):
+    a = 1 + z + 0.75 * z**2
+    b = 0.25 * z**2
+    roots = np.roots([1, -a, b])
+    return np.max(np.abs(roots))
+
+
+def abm4_max_root(z):
+    a = 1 + (7 * z) / 6 + (55 * z**2) / 64
+    b = (-5 * z) / 24 - (59 * z**2) / 64
+    c = (z / 24) + (37 * z**2) / 64
+    d = -(9 * z**2) / 64
+    roots = np.roots([1, -a, -b, -c, -d])
+    return np.max(np.abs(roots))
+
+
+def compute_ivp_stability_grid(stability_func, re_vals, im_vals):
+    grid = np.zeros((len(im_vals), len(re_vals)))
+    for i, im in enumerate(im_vals):
+        for j, re in enumerate(re_vals):
+            z = re + 1j * im
+            grid[i, j] = stability_func(z)
+    return grid
+
+
+def plot_ivp_stability():
+    re_vals = np.linspace(-5, 5, 301)
+    im_vals = np.linspace(-5, 5, 301)
+    re_grid, im_grid = np.meshgrid(re_vals, im_vals)
+
+    methods_ivp = [
+        ("RK2", lambda z: abs(rk2_stability_function(z))),
+        ("RK4", lambda z: abs(rk4_stability_function(z))),
+        ("ABM2", abm2_max_root),
+        ("ABM4", abm4_max_root),
+    ]
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+    axes = axes.flatten()
+
+    for ax, (name, func) in zip(axes, methods_ivp):
+        stability_grid = compute_ivp_stability_grid(func, re_vals, im_vals)
+        stable_mask = stability_grid <= 1.0
+        im = ax.contourf(
+            re_grid,
+            im_grid,
+            stable_mask.astype(float),
+            levels=[-0.5, 0.5, 1.5],
+            colors=["#d73027", "#1a9850"],
+            alpha=0.85,
+        )
+        ax.contour(re_grid, im_grid, stability_grid, levels=[1], colors='black', linewidths=1.5)
+        ax.axhline(0, color='white', linewidth=0.8, alpha=0.6)
+        ax.axvline(0, color='white', linewidth=0.8, alpha=0.6)
+        ax.set_xlabel('Re(z)', fontsize=12)
+        ax.set_ylabel('Im(z)', fontsize=12)
+        ax.set_aspect('equal', adjustable='box')
+        ax.set_title(f'{name}: IVP Stability Region', fontsize=14, fontweight='bold')
+        cbar = plt.colorbar(im, ax=ax, ticks=[0, 1])
+        cbar.ax.set_yticklabels(['Unstable', 'Stable'])
+        cbar.set_label('|R(z)| ≤ 1', fontsize=10)
+
+    plt.suptitle('IVP Stability Regions (|R(z)| ≤ 1)', fontsize=16, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('ivp_stability.png', dpi=150)
+    plt.close(fig)
+    print("\n" + "=" * 70)
+    print("IVP stability plot saved as 'ivp_stability.png'")
+    print("=" * 70)
+
 
 if __name__ == "__main__":
     h = 0.001  
@@ -88,7 +167,6 @@ if __name__ == "__main__":
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
     axes = axes.flatten()
 
-    kappa_grid = np.zeros_like(S0)
     for idx, (method, name) in enumerate(zip(methods, methods_str)):
         print(f"\nComputing {name}...")
         kappa_grid = np.zeros_like(S0)
@@ -102,9 +180,7 @@ if __name__ == "__main__":
         ax = axes[idx]
         im = ax.contourf(S0, S1, kappa_grid, levels=20, cmap='RdYlGn_r', vmin=0, vmax=10)
         ax.contour(S0, S1, kappa_grid, levels=[1], colors='black', linewidths=2, linestyles='--')
-        ax.plot([s_true], [s_true], 'w*', markersize=15, markeredgecolor='black', 
-                markeredgewidth=2, label=f's* = {s_true}')
-        ax.axvline(x=s_true, color='white', linestyle=':', linewidth=1, alpha=0.7)
+        ax.plot([s_true], [s_true], 'w*', markersize=15, markeredgecolor='black', label='True s*')
         ax.axhline(y=s_true, color='white', linestyle=':', linewidth=1, alpha=0.7)
         ax.set_xlabel('s0 (first guess)', fontsize=12)
         ax.set_ylabel('s1 (second guess)', fontsize=12)
@@ -112,9 +188,7 @@ if __name__ == "__main__":
         cbar = plt.colorbar(im, ax=ax)
         cbar.set_label('κ(s0, s1)', fontsize=10)
         ax.legend(loc='upper right', fontsize=10)
-
-
-
+    
     plt.suptitle('SHOOTING METHOD: 2D Condition Number Heatmaps\nAll 4 Methods Comparison', 
                  fontsize=16, fontweight='bold')
     plt.tight_layout()
@@ -133,3 +207,5 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("Running IVP Stability Analysis...")
     print("=" * 70)
+    print("=" * 70)
+    plot_ivp_stability()
