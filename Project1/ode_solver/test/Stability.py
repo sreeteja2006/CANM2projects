@@ -80,7 +80,7 @@ def compute_condition_number_2d(method, s0, s1, h=0.001):
 if __name__ == "__main__":
     h = 0.001  
     s_true = 23.25 
-    n_points = 15
+    n_points = 50
     s0_range = np.linspace(-25, 25, n_points)
     s1_range = np.linspace(-25, 25, n_points)
     S0, S1 = np.meshgrid(s0_range, s1_range)
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
     axes = axes.flatten()
 
+    kappa_grid = np.zeros_like(S0)
     for idx, (method, name) in enumerate(zip(methods, methods_str)):
         print(f"\nComputing {name}...")
         kappa_grid = np.zeros_like(S0)
@@ -111,7 +112,9 @@ if __name__ == "__main__":
         cbar = plt.colorbar(im, ax=ax)
         cbar.set_label('κ(s0, s1)', fontsize=10)
         ax.legend(loc='upper right', fontsize=10)
-    
+
+
+
     plt.suptitle('SHOOTING METHOD: 2D Condition Number Heatmaps\nAll 4 Methods Comparison', 
                  fontsize=16, fontweight='bold')
     plt.tight_layout()
