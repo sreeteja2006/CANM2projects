@@ -58,7 +58,39 @@ def getinput():
     method_choice = int(input("Enter the number corresponding to the method: "))
     method = methods.get(method_choice, RK4)
 
-    return order, func, xstart, xend, h, (a0, b0, c0), (a1, b1, c1), guess, method
+
+    return {'order': order, 'func': func, 'xstart': xstart, 'xend': xend, 'h': h,
+            'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': guess, 'method': method}
+
+def solve_bvp(params):
+    solver = odesolver(params['order'],params['func'], params['xstart'], params['xend'], params['h'],
+                       params['bc_start'], params['bc_end'], params['guess'], params['method'])
+    u,x,_,_,_ = solver.solve()
+    return u,x
+def plot_solution(x, u):
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, u[:, 0], label='u(x)', marker='o')
+    plt.plot(x, u[:, 1], label="u'(x)", marker='x')
+    plt.title('Solution of the ODE')
+    plt.xlabel('x')
+    plt.ylabel('u and u\'')
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+
+
+if __name__ == "__main__":
+    params = getinput()
+    u, x = solve_bvp(params)
+
+    print("\nSolution u(x):")
+    for xi, ui in zip(x, u):
+        print(f"x: {xi:.4f}, u: {ui[0]:.4f}, u': {ui[1]:.4f}")
+    plot_solution(x, u)
+
+
+
 
 
 
