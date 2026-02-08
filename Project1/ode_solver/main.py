@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from core.core import odesolver
 from methods.RK_4 import RK4
 from methods.RK_2 import RK2
@@ -60,6 +61,44 @@ def getinput():
     return {'order': order, 'func': func, 'xstart': xstart, 'xend': xend, 'h': h,
             'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': guess, 'method': method}
 
+def load_from_file(filepath):
+    """Load inputs from a file."""
+    methods = {
+        1: RK4,
+        2: RK2,
+        3: ABM2,
+        4: ABM4
+    }
+    
+    with open(filepath, 'r') as f:
+        lines = [line.strip() for line in f.readlines()]
+    
+    order = int(lines[0])
+    funcstr = lines[1].rstrip("]")
+    func = eval("lambda u,x: np.array([" + funcstr + "])")
+    xstart = float(lines[2])
+    xend = float(lines[3])
+    h = float(lines[4])
+    a0 = float(lines[5])
+    b0 = float(lines[6])
+    c0 = float(lines[7])
+    a1 = float(lines[8])
+    b1 = float(lines[9])
+    c1 = float(lines[10])
+    guess1 = float(lines[11])
+    guess2 = float(lines[12])
+    method_choice = int(lines[13])
+    method = methods.get(method_choice, RK4)
+    
+    # Store plot preferences for later use
+    show_stability = lines[14].lower() == 'y' if len(lines) > 14 else False
+    show_convergence = lines[15].lower() == 'y' if len(lines) > 15 else False
+    
+    params = {'order': order, 'func': func, 'xstart': xstart, 'xend': xend, 'h': h,
+              'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': [guess1, guess2], 'method': method}
+    
+    return params, show_stability, show_convergence
+
 def solve_bvp(params):
     solver = odesolver(
         order=params['order'],
@@ -113,16 +152,40 @@ def convergence_plots(params):
 
 
 if __name__ == "__main__":
-    params = getinput()
+    print("\nChoose input mode:")
+    print("1. Use default inputs (from input.txt)")
+    print("2. Enter custom inputs")
+    choice = input("Enter your choice (1 or 2): ").strip()
+    
+    show_stability = None
+    show_convergence = None
+    
+    if choice == '1':
+        input_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'input.txt')
+        if os.path.exists(input_file):
+            print(f"\nLoading inputs from {input_file}...")
+            params, show_stability, show_convergence = load_from_file(input_file)
+        else:
+            print(f"\nError: {input_file} not found. Switching to custom input mode.")
+            params = getinput()
+    else:
+        params = getinput()
+    
     u, x = solve_bvp(params)
 
     print("\nSolution u(x):")
     for xi, ui in zip(x, u):
         print(f"x: {xi:.4f}, u: {ui[0]:.4f}, u': {ui[1]:.4f}")
-    print("Do you want to see stability plots? (y/n)")
-    if input().lower() == 'y':
+    
+    if show_stability is None:
+        print("Do you want to see stability plots? (y/n)")
+        show_stability = input().lower() == 'y'
+    if show_stability:
         stability_plots(params)
-    if(input("\nDo you want to see convergence plots? (y/n)").lower() == 'y'):
+    
+    if show_convergence is None:
+        show_convergence = input("\nDo you want to see convergence plots? (y/n)").lower() == 'y'
+    if show_convergence:
         print("\nGenerating convergence plots...")
         convergence_plots(params)
 
