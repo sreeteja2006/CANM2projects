@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 
 from methods.ABM_2 import ABM2
 from methods.ABM_4 import ABM4
@@ -19,6 +20,36 @@ class analysis:
         ratio = h_coarse / h_fine (e.g., 2)
         """
         return y_fine[::ratio]
+
+    def load_reference_solution(self, x=None):
+        """
+        Load reference solution from y_ref.txt.
+        
+        If x is provided (array of points), interpolate the reference solution to those points.
+        Otherwise, return the raw reference data.
+        
+        Returns:
+            tuple: (y_ref, x_ref) where y_ref is the solution and x_ref is the grid it was sampled on.
+        """
+        y_ref_path = Path(__file__).resolve().parent / "y_ref.txt"
+        
+        if not y_ref_path.exists():
+            raise FileNotFoundError(f"Reference solution file not found: {y_ref_path}")
+        
+        # Load reference data
+        y_ref_data = np.loadtxt(y_ref_path)
+        
+        # Create uniform grid that y_ref was sampled on (every 100 points from reference.py)
+        n_ref = len(y_ref_data)
+        x_ref = np.linspace(0, 1, n_ref)
+        
+        # If no x provided, return raw reference solution
+        if x is None:
+            return y_ref_data, x_ref
+        
+        # Otherwise, interpolate to provided x points
+        y_interp = np.interp(x, x_ref, y_ref_data)
+        return y_interp, x_ref
 
 
     def h_refinement(self,htest):
@@ -126,5 +157,62 @@ class analysis:
         plt.legend()
         plt.show()
 
-
-
+    def plot_accuracy_errors(self, h_values=None):
+        """
+        Plot absolute errors for each numerical method compared to reference solution.
+        
+        Parameters:
+            h_values: list of step sizes to test (default: [1e-3, 1e-4, 1e-5, 1e-6])
+        """
+        if h_values is None:
+            h_values = [1e-3, 1e-4, 1e-5, 1e-6]
+        
+        # Load reference solution
+        y_ref, x_ref = self.load_reference_solution()
+        
+        methods = [RK2, RK4, ABM2, ABM4]
+        method_names = ['RK2', 'RK4', 'ABM2', 'ABM4']
+        
+        # Store original state
+        original_h = self.solver.get_h()
+        original_method = self.solver.get_method()
+        
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8), constrained_layout=True)
+        axes = axes.flatten()
+        
+        for idx, (method, name) in enumerate(zip(methods, method_names)):
+            ax = axes[idx]
+            self.solver.set_method(method)
+            
+            for h in h_values:
+                self.solver.set_h(h)
+                sol, x, _, blew, _ = self.solver.solve()
+                
+                if blew or sol is None:
+                    print(f"{name} blew up at h={h}; skipping")
+                    continue
+                
+                # Interpolate reference solution to solver's x grid
+                y_ref_on_x, _ = self.load_reference_solution(x)
+                
+                # Compute absolute error
+                y_numerical = sol[:, 0]
+                error = np.abs(y_numerical - y_ref_on_x)
+                
+                ax.plot(x, error, label=f'h={h}')
+            
+            ax.set_title(f'Absolute Error |y_numerical - y_reference| ({name})')
+            ax.set_xlabel('x')
+            ax.set_ylabel('Absolute Error')
+            ax.legend(fontsize='small')
+            ax.grid(True)
+        
+        # Restore original state
+        self.solver.set_method(original_method)
+        self.solver.set_h(original_h)
+        
+        # Save and show
+        outpath = Path(__file__).resolve().parent / 'accuracy_errors.png'
+        plt.savefig(outpath, dpi=300)
+        print(f"Accuracy plot saved to {outpath}")
+        plt.show()
