@@ -1,18 +1,22 @@
 import numpy as np
 from pathlib import Path
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend for saving plots
+import matplotlib.pyplot as plt
 
 from methods.ABM_2 import ABM2
 from methods.ABM_4 import ABM4
 from methods.RK_2 import RK2
 from methods.RK_4 import RK4
 from core.core import odesolver
-import matplotlib.pyplot as plt
 
 
 class analysis:
     
     def __init__(self, solver : odesolver):
         self.solver = solver
+        self.methods = [RK2, RK4, ABM2, ABM4]
+        self.methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
 
     def restrict_solution(self, y_fine, ratio):
         """

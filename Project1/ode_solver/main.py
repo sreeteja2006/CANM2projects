@@ -5,10 +5,9 @@ from methods.RK_4 import RK4
 from methods.RK_2 import RK2
 from methods.ABM_2 import ABM2
 from methods.ABM_4 import ABM4
+from analysis.analysis import analysis
 
-
-print("Welcome to ODE Solver 67")
-print("/n Fuck my life")
+print("Welcome to the ODE Solver for Boundary Value Problems (BVPs) using the Shooting Method!")
 def getinput():
     order = int(input("\nEnter the order of the ODE (1 or 2): "))
 
@@ -17,7 +16,7 @@ def getinput():
     print("\n For example, for u'' + 2u' + 3u = 0, you can enter: [u[1], -2*u[1] - 3*u[0]]\n")
 
     funcstr = input("f(u,x) = [")
-    funcstr.rstrip("]")
+    funcstr =funcstr.rstrip("]")
     func = eval("lambda u,x: np.array([" + funcstr + "])")
 
 
@@ -58,7 +57,77 @@ def getinput():
     method_choice = int(input("Enter the number corresponding to the method: "))
     method = methods.get(method_choice, RK4)
 
-    return order, func, xstart, xend, h, (a0, b0, c0), (a1, b1, c1), guess, method
+    return {'order': order, 'func': func, 'xstart': xstart, 'xend': xend, 'h': h,
+            'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': guess, 'method': method}
+
+def solve_bvp(params):
+    solver = odesolver(
+        order=params['order'],
+        method=params['method'],
+        bc=(params['bc_start'], params['bc_end']),
+        tol=1e-8,
+        max_iter=100,
+        func=params['func'],
+        xstart=params['xstart'],
+        xend=params['xend'],
+        h=params['h'],
+        guess=params['guess']
+    )
+    u, x, _, _, _ = solver.solve()
+    return u, x
+
+def stability_plots(params):
+    solver = odesolver(
+        order=params['order'],
+        method=params['method'],
+        bc=(params['bc_start'], params['bc_end']),
+        tol=1e-8,
+        max_iter=100,
+        func=params['func'],
+        xstart=params['xstart'],
+        xend=params['xend'],
+        h=params['h'],
+        guess=params['guess']
+    )
+    
+    analysis_obj = analysis(solver)
+    analysis_obj.run_full_stability_analysis()
+
+def convergence_plots(params):
+    solver = odesolver(
+        order=params['order'],
+        method=params['method'],
+        bc=(params['bc_start'], params['bc_end']),
+        tol=1e-8,
+        max_iter=100,
+        func=params['func'],
+        xstart=params['xstart'],
+        xend=params['xend'],
+        h=params['h'],
+        guess=params['guess']
+    )
+    
+    analysis_obj = analysis(solver)
+    results = analysis_obj.h_refinement(params['h'])
+    analysis_obj.plot_loglog_convergence(results)
+
+
+if __name__ == "__main__":
+    params = getinput()
+    u, x = solve_bvp(params)
+
+    print("\nSolution u(x):")
+    for xi, ui in zip(x, u):
+        print(f"x: {xi:.4f}, u: {ui[0]:.4f}, u': {ui[1]:.4f}")
+    print("Do you want to see stability plots? (y/n)")
+    if input().lower() == 'y':
+        stability_plots(params)
+    if(input("\nDo you want to see convergence plots? (y/n)").lower() == 'y'):
+        print("\nGenerating convergence plots...")
+        convergence_plots(params)
+
+
+
 
 
 
