@@ -8,7 +8,7 @@ from methods.ABM_4 import ABM4
 
 
 print("Welcome to ODE Solver 67")
-
+print("/n Fuck my life")
 def getinput():
     order = int(input("\nEnter the order of the ODE (1 or 2): "))
 
@@ -60,7 +60,6 @@ def getinput():
 
     return order, func, xstart, xend, h, (a0, b0, c0), (a1, b1, c1), guess, method
 
-def 
 
 
         
