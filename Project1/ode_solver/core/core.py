@@ -201,8 +201,3 @@ class odesolver:
 
     def set_blowup(self, blowup):
         self.blowup = blowup
-
-
-    
-
-    
