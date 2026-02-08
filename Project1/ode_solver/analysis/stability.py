@@ -1,8 +1,12 @@
+import os
+import sys
 import numpy as np
-from Project1.ode_solver.core.core import odesolver
+import matplotlib
+matplotlib.use('Agg')  # Non-interactive backend for saving plots
+import matplotlib.pyplot as plt
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from methods.ABM_4 import ABM4
 from methods.RK_2 import RK2
-import matplotlib.pyplot as plt
 from methods.RK_4 import RK4
 from methods.ABM_2 import ABM2
 from core.core import odesolver
