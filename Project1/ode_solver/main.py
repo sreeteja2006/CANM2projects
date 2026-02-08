@@ -150,9 +150,7 @@ def load_from_file(filepath):
         3: ABM2,
         4: ABM4
     }
-    
     with open(filepath, 'r') as f:
-        # Skip comment lines starting with #
         lines = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith('#')]
     
     order = int(lines[0])
