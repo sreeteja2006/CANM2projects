@@ -225,7 +225,7 @@ class analysis:
                 grid[i, j] = stability_func(z)
         return grid
 
-    def plot_ivp_stability(self, save_path='ivp_stability.png'):
+    def plot_ivp_stability(self, save_path='CANM2projects/Project1/ode_solver/Plots/ivp_stability.png'):
         re_vals = np.linspace(-5, 5, 301)
         im_vals = np.linspace(-5, 5, 301)
         re_grid, im_grid = np.meshgrid(re_vals, im_vals)
@@ -270,8 +270,8 @@ class analysis:
         print(f"IVP stability plot saved as '{save_path}'")
         print("=" * 70)
 
-    def plot_shooting_stability_heatmap(self, s_true=23.25, n_points=50, h=0.001, 
-                                         s_range=(-25, 25), save_path='stability_2d_heatmap.png'):
+    def plot_shooting_stability_heatmap(self, s_true=23.25, n_points=15, h=0.001, 
+                                         s_range=(-25, 25), save_path='CANM2projects/Project1/ode_solver/Plots/stability_2d_heatmap.png'):
         s0_range = np.linspace(s_range[0], s_range[1], n_points)
         s1_range = np.linspace(s_range[0], s_range[1], n_points)
         S0, S1 = np.meshgrid(s0_range, s1_range)
@@ -316,7 +316,7 @@ class analysis:
         print("  Black dashed line = κ = 1 contour")
         print("  White star = True solution s*")
 
-    def run_full_stability_analysis(self, s_true=23.25, n_points=50, h=0.001):
+    def run_full_stability_analysis(self, s_true=23.25, n_points=20, h=0.001):
         """Run complete stability analysis (both IVP and shooting method)."""
         print("\n" + "=" * 70)
         print("Running Full Stability Analysis...")
