@@ -19,7 +19,7 @@ bc = ((1, 0, 0), (1, 0, -1))
 def analytical_solution(x):
     return 1e-4 * (np.sqrt(100020000*x + 1) - 1)
 
-ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f,guess=[10, 0], xstart=0, xend=1, h=1e-3)
+ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-10, max_iter=1000, func=f, guess=[10,20], xstart=0, xend=1, h=1e-5)
 solution, x,_,_,_ = ob.solve()
 
 # error = np.abs(solution[:, 0] - analytical_solution(x))
@@ -41,8 +41,12 @@ solution, x,_,_,_ = ob.solve()
 # plt.grid(True)
 # plt.show()
 
-# Create analysis object and test accuracy
-# analyzer = analysis(ob)
-# h = [0.1,0.01,0.001,0.0001,0.00001]
-# analyzer.Convergence_test(h_values=h)
-# print(f"Analytical Accuracy: {accuracy}")
+analyzer = analysis(ob)
+results = analyzer.h_refinement(1e-3)
+for name, data in results.items():
+    print(f"\nMethod: {name}")
+    print(f"  Local orders : {np.round(data['orders'], 3)}")
+    print(f"  Avg order    : {data['order_avg']:.3f}")
+    print(f"  Std dev      : {data['order_std']:.3f}")
+
+analyzer.plot_loglog_convergence(results)
