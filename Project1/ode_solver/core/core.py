@@ -10,6 +10,7 @@ class odesolver:
         self.func = func
         self.guess = guess
         self.xstart = xstart
+        self._original_xstart = xstart  # Store the true original value
         self.xend = xend
         self.h = h
         self.method = method
@@ -34,22 +35,25 @@ class odesolver:
             return -c0/b0, -c1/a1, "nd"
         raise ValueError("Unknown/unsupported boundary condition type")
 
-    def F(self, s, y_start, y_end, bc_type, use_eps=False,backwards=False, eps_offset=1e-3) -> float:
+    def F(self, s, y_start, y_end, bc_type, use_eps=False, backwards=False, eps_offset=1e-3, true_xstart=None) -> float:
+        original_xstart = true_xstart if true_xstart is not None else self.xstart
+        
+        if use_eps:
+            effective_xstart = original_xstart + eps_offset
+        else:
+            effective_xstart = original_xstart
+        
         if bc_type in ("dd", "dn"):
             u0 = np.array([y_start + s * eps_offset if use_eps else y_start, s])
         elif bc_type in ("nn", "nd"):
             u0 = np.array([s, y_start])
         else:
             raise ValueError("Unknown/unsupported boundary condition type")
-
-
-        original_xstart = self.xstart
-        if use_eps:
-            self.xstart = original_xstart + eps_offset
-        u, _, blew = self.method(self, u0)
         
-
-        self.xstart = original_xstart
+        # Temporarily set xstart for integration, then restore to ORIGINAL
+        self.xstart = effective_xstart
+        u, _, blew = self.method(self, u0)
+        self.xstart = original_xstart  # Restore to original, not saved  
         
         if blew or np.any(np.isnan(u[-1])) or np.any(np.isinf(u[-1])):
             return 1e15 
@@ -59,14 +63,16 @@ class odesolver:
             return u[-1, 1] - y_end
 
     def shooting(self) -> tuple:
-
-        s0, s1 = 0.1, 1.0  
+        # Use the TRUE original xstart stored at initialization
+        true_xstart = self._original_xstart
+        
+        s0, s1 = self.guess[0],self.guess[1] 
         ystart, yend, bc_type = self.bcs()
         use_eps = False
         blowup_detected = False
         
-        F0 = self.F(s0, ystart, yend, bc_type, use_eps=False)
-        F1 = self.F(s1, ystart, yend, bc_type, use_eps=False)
+        F0 = self.F(s0, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
+        F1 = self.F(s1, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
         
         for i in range(self.max_iter):
             if abs(F1) <= self.tol:
@@ -82,17 +88,17 @@ class odesolver:
 
             s_new = s1 - F1 * (s1 - s0) / (F1 - F0)
             s0, s1 = s1, s_new
-            F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=False)
+            F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
         
     
         if blowup_detected:
             use_eps = True
             eps_offset = 1e-3
-            print(f"Using eps method: starting from x = {self.xstart + eps_offset}")
+            print(f"Using eps method: starting from x = {true_xstart + eps_offset}")
             
             s0, s1 = self.guess[0], self.guess[1]
-            F0 = self.F(s0, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
-            F1 = self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
+            F0 = self.F(s0, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
+            F1 = self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
             
             for j in range(self.max_iter):
                 if abs(F1) <= self.tol:
@@ -107,7 +113,7 @@ class odesolver:
                 
                 s_new = s1 - F1 * (s1 - s0) / (F1 - F0)
                 s0, s1 = s1, s_new
-                F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
+                F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
         return s1, bc_type, ystart, yend, use_eps
     
     def solve(self):
@@ -117,11 +123,13 @@ class odesolver:
         if bc_type in ("dd", "dn"):
             if use_eps:
                 u0 = np.array([start_val + s * eps_offset, s])
-                self.xstart = self.xstart + eps_offset
+                self.xstart = self._original_xstart + eps_offset  
             else:
                 u0 = np.array([start_val, s])
+                self.xstart = self._original_xstart  
         else:
             u0 = np.array([s, start_val])
+            self.xstart = self._original_xstart  
 
         u, x, blew = self.method(self, u0)
         return u, x, s, blew, bc_type
@@ -193,8 +201,3 @@ class odesolver:
 
     def set_blowup(self, blowup):
         self.blowup = blowup
-
-
-    
-
-    
