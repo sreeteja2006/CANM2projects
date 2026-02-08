@@ -1,16 +1,25 @@
+# ODE Order (1 or 2)
 2
-u[1], -u[1]**2/(u[0]+1e-4)]
+# Function: f(u,x) = [u[1], ...] (can use y for u[0], y' for u[1])
+[y', -y'**2/(y+1e-4)]
+# Domain: xstart, xend, step
 0
 1
 0.001
+# Boundary condition at xstart: a, b, c (for ay + by' + c = 0)
 1
 0
 0
+# Boundary condition at xend: a, b, c
 1
 0
 -1
+# Shooting method guesses: g1, g2
 200
 400
+# Method: 1=RK4, 2=RK2, 3=ABM2, 4=ABM4
 1
+# Show stability plots? (y/n)
 n
+# Show convergence plots? (y/n)
 n

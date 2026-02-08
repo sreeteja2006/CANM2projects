@@ -9,60 +9,141 @@ from methods.ABM_4 import ABM4
 from analysis.analysis import analysis
 
 print("Welcome to the ODE Solver for Boundary Value Problems (BVPs) using the Shooting Method!")
+
+def parse_func(funcstr):
+    funcstr = funcstr.strip()
+    if funcstr.startswith("["):
+        funcstr = funcstr[1:]
+    if funcstr.endswith("]"):
+        funcstr = funcstr[:-1]
+    
+    funcstr = funcstr.replace("y'", "u[1]").replace("y", "u[0]")
+    return eval("lambda u,x: np.array([" + funcstr + "])")
+
 def getinput():
-    order = int(input("\nEnter the order of the ODE (1 or 2): "))
+    print("\n" + "="*60)
+    print("  ODE INPUT")
+    print("="*60)
+    
+    while True:
+        try:
+            order = int(input("Order of ODE (1 or 2) [default=2]: ") or "2")
+            if order not in [1, 2]:
+                print("Error: Order must be 1 or 2.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter a valid integer (1 or 2).")
 
+    print("\nEnter function as: [y', f(y,y',x)]")
+    print("Example: y'' + 2y' + 3y = 0  →  [y', -2*y' - 3*y]")
+    while True:
+        try:
+            funcstr = input("f(u,x) = ")
+            if not funcstr.strip():
+                print("Error: Function cannot be empty.")
+                continue
+            func = parse_func(funcstr)
+            func(np.array([1.0, 1.0]), 0.0)
+            break
+        except Exception as e:
+            print(f"Error: Invalid function. {e}")
 
-    print("\n Enter the function in form of f(u,x) = [u[0],u[1],....,f(u,x)]\n")
-    print("\n For example, for u'' + 2u' + 3u = 0, you can enter: [u[1], -2*u[1] - 3*u[0]]\n")
+    # Domain input
+    print("\n" + "-"*40)
+    print("  DOMAIN")
+    print("-"*40)
+    while True:
+        try:
+            domain = input("x range (start, end, step) [e.g. 0, 1, 0.1]: ")
+            parts = [p.strip() for p in domain.split(",")]
+            if len(parts) != 3:
+                print("Error: Enter exactly 3 values (start, end, step).")
+                continue
+            xstart, xend, h = float(parts[0]), float(parts[1]), float(parts[2])
+            if xend <= xstart:
+                print("Error: end must be greater than start.")
+                continue
+            if h <= 0 or h > (xend - xstart):
+                print("Error: step must be positive and smaller than the range.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter valid numbers.")
 
-    funcstr = input("f(u,x) = [")
-    funcstr =funcstr.rstrip("]")
-    func = eval("lambda u,x: np.array([" + funcstr + "])")
+    # Boundary conditions
+    print("\n" + "-"*40)
+    print("  BOUNDARY CONDITIONS (ay + by' + c = 0)")
+    print("-"*40)
+    while True:
+        try:
+            bc_start = input("At x=start (a, b, c) [e.g. 1, 0, -1]: ")
+            parts = [p.strip() for p in bc_start.split(",")]
+            if len(parts) != 3:
+                print("Error: Enter exactly 3 values (a, b, c).")
+                continue
+            a0, b0, c0 = float(parts[0]), float(parts[1]), float(parts[2])
+            if a0 == 0 and b0 == 0:
+                print("Error: a and b cannot both be zero.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter valid numbers.")
+    
+    while True:
+        try:
+            bc_end = input("At x=end   (a, b, c) [e.g. 1, 0, -2]: ")
+            parts = [p.strip() for p in bc_end.split(",")]
+            if len(parts) != 3:
+                print("Error: Enter exactly 3 values (a, b, c).")
+                continue
+            a1, b1, c1 = float(parts[0]), float(parts[1]), float(parts[2])
+            if a1 == 0 and b1 == 0:
+                print("Error: a and b cannot both be zero.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter valid numbers.")
 
+    # Guesses
+    print("\n" + "-"*40)
+    print("  SHOOTING METHOD")
+    print("-"*40)
+    while True:
+        try:
+            guesses = input("Two initial guesses (g1, g2) [e.g. 0, 1]: ")
+            parts = [p.strip() for p in guesses.split(",")]
+            if len(parts) != 2:
+                print("Error: Enter exactly 2 values.")
+                continue
+            guess1, guess2 = float(parts[0]), float(parts[1])
+            if guess1 == guess2:
+                print("Error: Guesses must be different.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter valid numbers.")
 
-    xstart = float(input("Enter the start value of x: "))
-    xend = float(input("Enter the end value of x: "))
-    h = float(input("Enter the step size h: "))
-
-
-    print("\n Enter boundary conditions in the form of ay+by'+c=0:")
-    print("\n At xstart:")
-    a0 = float(input("a: "))
-    b0 = float(input("b: "))
-    c0 = float(input("c: "))
-    print("\n At xend:")
-    a1 = float(input("a: "))
-    b1 = float(input("b: "))
-    c1 = float(input("c: "))
-
-    print('\n give the two guesses for shooting method:')
-    guess1 = float(input("guess 1: "))
-    guess2 = float(input("guess 2: "))
-
-    guess = [guess1, guess2]
-
-    methods = {
-        1: RK4,
-        2: RK2,
-        3: ABM2,
-        4: ABM4
-    }
-
-    print("\n Choose the method to solve the ODE:")
-    print("1. Runge-Kutta 4th order (RK4)")
-    print("2. Runge-Kutta 2nd order (RK2)")
-    print("3. Adams-Bashforth-Moulton 2nd order (ABM2)")
-    print("4. Adams-Bashforth-Moulton 4th order (ABM4)")
-
-    method_choice = int(input("Enter the number corresponding to the method: "))
+    # Method choice
+    print("\nMethods: 1=RK4, 2=RK2, 3=ABM2, 4=ABM4")
+    while True:
+        try:
+            method_choice = int(input("Choose method [default=1]: ") or "1")
+            if method_choice not in [1, 2, 3, 4]:
+                print("Error: Choose 1, 2, 3, or 4.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter a valid integer.")
+    
+    methods = {1: RK4, 2: RK2, 3: ABM2, 4: ABM4}
     method = methods.get(method_choice, RK4)
-
+    print("="*60 + "\n")
+    
     return {'order': order, 'func': func, 'xstart': xstart, 'xend': xend, 'h': h,
-            'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': guess, 'method': method}
+            'bc_start': (a0, b0, c0), 'bc_end': (a1, b1, c1), 'guess': [guess1, guess2], 'method': method}
 
 def load_from_file(filepath):
-    """Load inputs from a file."""
     methods = {
         1: RK4,
         2: RK2,
@@ -71,7 +152,8 @@ def load_from_file(filepath):
     }
     
     with open(filepath, 'r') as f:
-        lines = [line.strip() for line in f.readlines()]
+        # Skip comment lines starting with #
+        lines = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith('#')]
     
     order = int(lines[0])
     funcstr = lines[1]
@@ -79,6 +161,7 @@ def load_from_file(filepath):
         funcstr = funcstr[1:]
     if funcstr.endswith("]"):
         funcstr = funcstr[:-1]
+    funcstr = funcstr.replace("y'", "u[1]").replace("y", "u[0]")
     func = eval("lambda u,x: np.array([" + funcstr + "])")
     xstart = float(lines[2])
     xend = float(lines[3])
@@ -94,7 +177,6 @@ def load_from_file(filepath):
     method_choice = int(lines[13])
     method = methods.get(method_choice, RK4)
     
-    # Store plot preferences for later use
     show_stability = lines[14].lower() == 'y' if len(lines) > 14 else False
     show_convergence = lines[15].lower() == 'y' if len(lines) > 15 else False
     
@@ -213,13 +295,11 @@ if __name__ == "__main__":
         show_stability = input().lower() == 'y'
     if show_stability:
         stability_plots(params)
-    
     if show_convergence is None:
-        show_convergence = input("\nDo you want to see convergence plots? (y/n)").lower() == 'y'
+        show_convergence = input("\nDo you want to see convergence plots? (y/n)\n").lower() == 'y'
     if show_convergence:
-        print("\nGenerating convergence plots...")
+        print("\nGenerating convergence plots...\n")
         convergence_plots(params)
-
 
 
 
