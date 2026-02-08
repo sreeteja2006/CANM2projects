@@ -93,7 +93,7 @@ plt.figure(figsize=(10, 6))
 
 # RK2 subplot
 plt.subplot(2, 2, 1)
-plt.plot(x, sol_RK2[300:, 0], label='RK2', linestyle='--')
+plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
 plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('RK2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
@@ -102,7 +102,7 @@ plt.legend()
 
 # RK4 subplot
 plt.subplot(2, 2, 2)
-plt.plot(x, sol_RK4[200:, 0], label='RK4', linestyle='--')
+plt.plot(x, sol_RK4[:, 0], label='RK4', linestyle='--')
 plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('RK4 Solution vs Analytical (aligned)')
 plt.xlabel('x')
@@ -111,7 +111,7 @@ plt.legend()
 
 # ABM2 subplot
 plt.subplot(2, 2, 3)
-plt.plot(x, sol_ABM2[100:,0], label='ABM2', linestyle='--')
+plt.plot(x, sol_ABM2[:,0], label='ABM2', linestyle='--')
 plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('ABM2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
