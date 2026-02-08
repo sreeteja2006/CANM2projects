@@ -43,10 +43,10 @@ solution, x,_,_,_ = ob.solve()
 
 analyzer = analysis(ob)
 results = analyzer.h_refinement(1e-3)
-for name, data in results.items():
-    print(f"\nMethod: {name}")
-    print(f"  Local orders : {np.round(data['orders'], 3)}")
-    print(f"  Avg order    : {data['order_avg']:.3f}")
-    print(f"  Std dev      : {data['order_std']:.3f}")
+# for name, data in results.items():
+#     print(f"\nMethod: {name}")
+#     print(f"  Local orders : {np.round(data['orders'], 3)}")
+#     print(f"  Avg order    : {data['order_avg']:.3f}")
+#     print(f"  Std dev      : {data['order_std']:.3f}")
 
-analyzer.plot_loglog_convergence(results)
+analyzer.plot_accuracy_errors()
