@@ -48,13 +48,30 @@ if data_path.exists():
 def f(u, x):
     return np.array([u[1], -u[1]**2/(u[0] + 1e-4)])
 
-eps = 1e-3
 bc = ((1, 0, 0), (1, 0, -1))
 
-# <<<<<<< Updated upstream
-# <<<<<<< Updated upstream
-def analytical_solution(x, eps=0):
-    return (np.sqrt(100020000*(x) + 1) - 1)
+# Load precomputed reference solution from y_ref.txt (if available)
+y_ref_data = None
+y_ref_path = Path(__file__).resolve().parent / "y_ref.txt"
+if y_ref_path.exists():
+    try:
+        y_ref_data = np.loadtxt(y_ref_path)
+    except Exception:
+        y_ref_data = None
+
+
+def analytical_solution(x):
+    """Return reference/analytical values at points x.
+
+    If `y_ref.txt` is present it will be used (interpolated across [0,1]).
+    Otherwise fall back to the analytic formula used in the reference run.
+    """
+    x_arr = np.asarray(x)
+    if y_ref_data is not None:
+        x_ref = np.linspace(0, 1, y_ref_data.size)
+        return np.interp(x_arr, x_ref, y_ref_data)
+    # fallback analytical formula (matches reference.py)
+    return 0.0001 * (np.sqrt(100020000 * x_arr + 1) - 1)
 
 
 ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
@@ -69,24 +86,15 @@ sol_ABM4, x,_,_,_ = ob.solve()
 
 # analytic evaluated on a fine grid and on the solver's x for alignment
 x_analytical = np.linspace(0, 1, 1000)
-# account for eps being added to initial x before the IVP solver starts
-# shift analytic evaluation back by eps; clip to >= 0 to avoid invalid sqrt
-x_shifted = np.maximum(x - eps, 0)
-x_analytical_shifted = np.maximum(x_analytical - eps, 0)
-sol_analytical_highres = analytical_solution(x_analytical_shifted, eps=eps)
-sol_analytical_on_x = analytical_solution(x_shifted, eps=eps)
+sol_analytical_highres = analytical_solution(x_analytical)
+sol_analytical_on_x = analytical_solution(x)
 
 plt.figure(figsize=(10, 6))
 
 # RK2 subplot
 plt.subplot(2, 2, 1)
-delta = sol_RK2[0, 0] - sol_analytical_on_x[0]
-# <<<<<<< Updated upstream
-# plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
-# =======
 plt.plot(x, sol_RK2[300:, 0], label='RK2', linestyle='--')
-# >>>>>>> Stashed changes
-plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
+plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('RK2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
 plt.ylabel('y')
@@ -94,11 +102,8 @@ plt.legend()
 
 # RK4 subplot
 plt.subplot(2, 2, 2)
-delta = sol_RK4[0, 0] - sol_analytical_on_x[0]
-# =======
 plt.plot(x, sol_RK4[200:, 0], label='RK4', linestyle='--')
-# >>>>>>> Stashed changes
-plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
+plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('RK4 Solution vs Analytical (aligned)')
 plt.xlabel('x')
 plt.ylabel('y')
@@ -106,13 +111,8 @@ plt.legend()
 
 # ABM2 subplot
 plt.subplot(2, 2, 3)
-delta = sol_ABM2[0, 0] - sol_analytical_on_x[0]
-# <<<<<<< Updated upstream
-# plt.plot(x, sol_ABM2, label='ABM2', linestyle='--')
-# =======
 plt.plot(x, sol_ABM2[100:,0], label='ABM2', linestyle='--')
-# >>>>>>> Stashed changes
-plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
+plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('ABM2 Solution vs Analytical (aligned)')
 plt.xlabel('x')
 plt.ylabel('y')
@@ -120,9 +120,8 @@ plt.legend()
 
 # ABM4 subplot
 plt.subplot(2, 2, 4)
-delta = sol_ABM4[0, 0] - sol_analytical_on_x[0]
 plt.plot(x, sol_ABM4[:, 0], label='ABM4', linestyle='--')
-plt.plot(x_analytical, sol_analytical_highres + delta, label='Analytical (shifted, x-offset)', linestyle='-')
+plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
 plt.title('ABM4 Solution vs Analytical (aligned)')
 plt.xlabel('x')
 plt.ylabel('y')
@@ -134,27 +133,7 @@ outpath = os.path.join(os.path.dirname(__file__), 'accuracy_plot.png')
 # =======
 # =======
 # >>>>>>> Stashed changes
-def analytical_solution(x, small=1e-4):
-    # Use precomputed data from y_rk2.txt if available, otherwise fall back
-    # to the analytical formula.
-    global _y_data, _x_data
-    x_arr = np.asarray(x)
-    scalar_input = False
-    if x_arr.ndim == 0:
-        scalar_input = True
-        x_arr = x_arr[np.newaxis]
-
-    if '_y_data' in globals() and _y_data is not None:
-        if _x_data is not None:
-            y_interp = np.interp(x_arr, _x_data, _y_data)
-            return y_interp[0] if scalar_input else y_interp
-        if _y_data.shape[0] == x_arr.shape[0]:
-            return _y_data[0] if scalar_input else _y_data
-
-    result = small * (np.sqrt(100020000 * x_arr + 1) - 1)
-    return result[0] if scalar_input else result
-
-
+ # (y_ref loading and analytical_solution moved earlier)
 ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
 
 # Methods and labels
