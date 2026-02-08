@@ -1,9 +1,9 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-import numpy as np
 from core.core import odesolver
+from methods.RK_2 import RK2
+import numpy as np
 from methods.RK_2 import RK2
 import matplotlib.pyplot as plt
 from methods.RK_4 import RK4
@@ -19,7 +19,7 @@ bc = ((1, 0, 0), (1, 0, -1))
 def analytical_solution(x):
     return 1e-4 * (np.sqrt(100020000*x + 1) - 1)
 
-ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f,guess=[20, 10], xstart=0, xend=1, h=1e-3)
+ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f,guess=[10, 0], xstart=0, xend=1, h=1e-3)
 solution, x,_,_,_ = ob.solve()
 
 # error = np.abs(solution[:, 0] - analytical_solution(x))
