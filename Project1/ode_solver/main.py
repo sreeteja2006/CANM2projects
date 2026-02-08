@@ -74,7 +74,11 @@ def load_from_file(filepath):
         lines = [line.strip() for line in f.readlines()]
     
     order = int(lines[0])
-    funcstr = lines[1].rstrip("]")
+    funcstr = lines[1]
+    if funcstr.startswith("["):
+        funcstr = funcstr[1:]
+    if funcstr.endswith("]"):
+        funcstr = funcstr[:-1]
     func = eval("lambda u,x: np.array([" + funcstr + "])")
     xstart = float(lines[2])
     xend = float(lines[3])
@@ -145,21 +149,48 @@ def convergence_plots(params):
         h=params['h'],
         guess=params['guess']
     )
-    
     analysis_obj = analysis(solver)
     results = analysis_obj.h_refinement(params['h'])
     analysis_obj.plot_loglog_convergence(results)
 
+def plotting(params, u, x):
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    method_name = params['method'].__name__ if hasattr(params['method'], '__name__') else str(params['method'])
+    ax1 = axes[0]
+    ax1.plot(x, u[:, 0], 'b-', linewidth=2, marker='o', markersize=3, label='y(x)')
+    ax1.set_title(f'Solution y(x) using {method_name}', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('x', fontsize=12)
+    ax1.set_ylabel('y', fontsize=12)
+    ax1.grid(True, alpha=0.3)
+    ax1.legend(fontsize=10)
+    
+    ax2 = axes[1]
+    ax2.plot(x, u[:, 1], 'r-', linewidth=2, marker='x', markersize=3, label="y'(x)")
+    ax2.set_title(f"Derivative y'(x) using {method_name}", fontsize=14, fontweight='bold')
+    ax2.set_xlabel('x', fontsize=12)
+    ax2.set_ylabel("y'", fontsize=12)
+    ax2.grid(True, alpha=0.3)
+    ax2.legend(fontsize=10)
+    
+    plt.suptitle('BVP Solution using Shooting Method', fontsize=16, fontweight='bold')
+    plt.tight_layout()
+    
+    # saving the plots to respective directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    plots_dir = os.path.join(script_dir, 'Plots')
+    os.makedirs(plots_dir, exist_ok=True)
+    plt.savefig(os.path.join(plots_dir, 'solution_plot.png'), dpi=150)
+    plt.show()
 
 if __name__ == "__main__":
     print("\nChoose input mode:")
     print("1. Use default inputs (from input.txt)")
     print("2. Enter custom inputs")
     choice = input("Enter your choice (1 or 2): ").strip()
-    
+
     show_stability = None
     show_convergence = None
-    
+
     if choice == '1':
         input_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'input.txt')
         if os.path.exists(input_file):
@@ -170,13 +201,13 @@ if __name__ == "__main__":
             params = getinput()
     else:
         params = getinput()
-    
+        
     u, x = solve_bvp(params)
-
     print("\nSolution u(x):")
     for xi, ui in zip(x, u):
         print(f"x: {xi:.4f}, u: {ui[0]:.4f}, u': {ui[1]:.4f}")
-    
+
+    plotting(params, u, x)
     if show_stability is None:
         print("Do you want to see stability plots? (y/n)")
         show_stability = input().lower() == 'y'
