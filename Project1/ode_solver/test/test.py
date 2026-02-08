@@ -19,7 +19,7 @@ bc = ((1, 0, 0), (1, 0, -1))
 def analytical_solution(x):
     return 1e-4 * (np.sqrt(100020000*x + 1) - 1)
 
-ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[10,20], xstart=0, xend=1, h=1e-5)
+ob = odesolver(order=2, method=ABM2, bc=bc, tol=1e-10, max_iter=1000, func=f, guess=[10,20], xstart=0, xend=1, h=1e-5)
 solution, x,_,_,_ = ob.solve()
 
 # error = np.abs(solution[:, 0] - analytical_solution(x))

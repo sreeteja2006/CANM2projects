@@ -71,8 +71,8 @@ class odesolver:
         use_eps = False
         blowup_detected = False
         
-        F0 = self.F(s0, ystart, yend, bc_type, use_eps=False)
-        F1 = self.F(s1, ystart, yend, bc_type, use_eps=False)
+        F0 = self.F(s0, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
+        F1 = self.F(s1, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
         
         for i in range(self.max_iter):
             if abs(F1) <= self.tol:
@@ -88,17 +88,17 @@ class odesolver:
 
             s_new = s1 - F1 * (s1 - s0) / (F1 - F0)
             s0, s1 = s1, s_new
-            F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=False)
+            F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=False, true_xstart=true_xstart)
         
     
         if blowup_detected:
             use_eps = True
             eps_offset = 1e-3
-            print(f"Using eps method: starting from x = {self.xstart + eps_offset}")
+            print(f"Using eps method: starting from x = {true_xstart + eps_offset}")
             
             s0, s1 = self.guess[0], self.guess[1]
-            F0 = self.F(s0, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
-            F1 = self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
+            F0 = self.F(s0, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
+            F1 = self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
             
             for j in range(self.max_iter):
                 if abs(F1) <= self.tol:
@@ -113,7 +113,7 @@ class odesolver:
                 
                 s_new = s1 - F1 * (s1 - s0) / (F1 - F0)
                 s0, s1 = s1, s_new
-                F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset)
+                F0, F1 = F1, self.F(s1, ystart, yend, bc_type, use_eps=True, eps_offset=eps_offset, true_xstart=true_xstart)
         return s1, bc_type, ystart, yend, use_eps
     
     def solve(self):
