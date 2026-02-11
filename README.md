@@ -1,3 +1,4 @@
 # CANM2projects
 
-Repo containing all the projects of CANM-2
+This Repo contains all the projects we made through  SEM-3  
+
