@@ -61,6 +61,8 @@ def infnorm_tridiag(d, l, u):
 
     return max_row_sum
 
+# Using J*x = e to get inverse matrix easily (solve one row at a time)
+
 
 def inverse_infnorm_tridiag(d, l, u):
     n = len(d)
