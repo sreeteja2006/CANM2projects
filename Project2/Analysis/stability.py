@@ -1,134 +1,105 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from Project2.Test.Teja import matrix_gen, TDMA
-import copy
+from Project2.Test.Teja import TDMA
 
 
-def infnorm(A):
-    n, m = A.shape
-    norm = 0
-    for i in range(n):
-        s = 0
-        for j in range(m):
-            v = A[i, j]
-            s += v if v >= 0 else -v
-        norm = s if s > norm else norm
-    return norm
+def residual(w, eps, alpha, beta):
+    n = len(w) - 1
+    F = np.zeros_like(w)
 
-
-def diag(vec, k):
-    n = vec.size
-    if k == -1:
-        M = np.zeros((n + 1, n + 1), dtype=float)
-        for i in range(1, n + 1):
-            M[i, i - 1] = vec[i - 1]
-        return M
-    if k == 0:
-        M = np.zeros((n, n), dtype=float)
-        for i in range(n):
-            M[i, i] = vec[i]
-        return M
-    if k == 1:
-        M = np.zeros((n+1, n+1), dtype=float)
-        for i in range(n):
-            M[i, i + 1] = vec[i]
-        return M
-    raise ValueError("k must be -1, 0, or 1")
-
-
-def matmul(A, B):
-    n, p = A.shape
-    p2, m = B.shape
-    if p != p2:
-        raise ValueError("shape mismatch")
-    C = np.zeros((n, m), dtype=float)
-    for i in range(n):
-        for j in range(m):
-            s = 0.0
-            for k in range(p):
-                s += A[i, k] * B[k, j]
-            C[i, j] = s
-    return C
-
-
-def getminormat(A, i, j):
-    m = copy.deepcopy(A)
-    m = np.delete(m, i, axis=0)
-    m = np.delete(m, j, axis=1)
-    return m
-
-
-def determinant(A):
-    numcols = len(A[0])
-    numrows = len(A)
-
-    if (numrows != numcols):
-        raise ValueError("Please input a sqaure matrix")
-    if numcols == 2:
-        return A[0][0] * A[1][1] - A[0][1] * A[1][0]
-
-    sum = 0
-    for i in range(numcols):
-        sum += (A[0, i])*((-1)**(i))*determinant(getminormat(A, 0, i))
-    return sum
-
-
-def transpose(matrix):
-    return [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
-
-
-def inv(A):
-    cofactors = []
-    n = len(A[0])
-    for i in range(n):
-        rows = []
-        for j in range(n):
-            minor = getminormat(A, i, j)
-            cofactor = ((-1)**(i+j))*determinant(minor)
-            rows.append(cofactor)
-        cofactors.append(rows)
-
-    Adjancencymatrix = transpose(cofactors)
-
-    if (determinant(A)):
-        return Adjancencymatrix/determinant(A)
-    else:
-        return -1
-
-
-def condnum(J):
-    return infnorm(J)*(infnorm(inv(J)))
-
-
-d, l, u, w = matrix_gen(1000, 0, 1, 1e-4)
-J = diag(d, 0) + diag(l, -1) + diag(u, 1)
-print(condnum(J))
-n = 1000
-b = np.zeros(n + 1)
-
-b[0] = w[0]
-b[-1] = w[-1] - 1
-
-
-def f(w):
     for i in range(1, n):
-        b[i] = w[i + 1] - 2 * w[i] + w[i - 1] + \
-            ((w[i] - w[i - 1])**2) / (4 * (w[i] + 1e-4))
-    b[0] = w[0]
-    b[-1] = w[-1] - 1
-    return b
+        F[i] = (
+            w[i + 1]
+            - 2 * w[i]
+            + w[i - 1]
+            + ((w[i] - w[i - 1]) ** 2) / (4 * (w[i] + eps))
+        )
+
+    F[0] = w[0]-alpha
+    F[n] = w[n] - beta
+    return F
 
 
-b = f(w)
+def jacobian(w, eps):
+    n = len(w) - 1
 
-for i in range(100):
-    x = TDMA(d, l, u, b)
-    w += x
-    if (np.linalg.norm(w) > 1e2):
+    d = np.zeros(n + 1)
+    l = np.zeros(n)
+    u = np.zeros(n)
+
+    d[0] = 1.0
+    d[n] = 1.0
+
+    for i in range(1, n):
+        wi = w[i]
+        wim1 = w[i - 1]
+
+        nonlinear = (wi - wim1) ** 2
+        denom = 4 * (wi + eps)
+
+        u[i] = 1.0
+        l[i - 1] = 1.0 - (2 * (wi - wim1)) / denom
+        d[i] = (
+            -2
+            + (2 * (wi - wim1)) / denom
+            - nonlinear / (4 * (wi + eps) ** 2)
+        )
+
+    return d, l, u
+
+
+def infnorm_tridiag(d, l, u):
+    n = len(d)
+    max_row_sum = 0.0
+
+    for i in range(n):
+        row_sum = abs(d[i])
+        if i > 0:
+            row_sum += abs(l[i - 1])
+        if i < n - 1:
+            row_sum += abs(u[i])
+        max_row_sum = max(max_row_sum, row_sum)
+
+    return max_row_sum
+
+
+def inverse_infnorm_tridiag(d, l, u):
+    n = len(d)
+    max_norm = 0.0
+
+    for i in range(n):
+        e = np.zeros(n)
+        e[i] = 1.0
+
+        x = TDMA(d.copy(), l.copy(), u.copy(), e)
+        max_norm = max(max_norm, np.linalg.norm(x, np.inf))
+
+    return max_norm
+
+
+def cond_tridiag(d, l, u):
+    return infnorm_tridiag(d, l, u) * inverse_infnorm_tridiag(d, l, u)
+
+
+n = 100
+eps = 1e-4
+
+w = np.linspace(0, 1, n + 1)
+
+for k in range(50):
+
+    F = residual(w, eps, 0, 1)
+
+    d, l, u = jacobian(w, eps)
+
+    cond = cond_tridiag(d, l, u)
+    print(f"Iter {k}: cond(J) = {cond:.3e}")
+
+    delta = TDMA(d.copy(), l.copy(), u.copy(), -F)
+
+    w += delta
+
+    if np.linalg.norm(delta, np.inf) < 1e-10:
+        print(f"Converged in {k+1} iterations")
         break
-    b = f(w)
-    d, l, u, _ = matrix_gen(1000, 0, 1, 1e-4)
-    J = matmul(J, diag(d, 0) + diag(l, -1) + diag(u, 1))
-    print(condnum(J))
-    if np.linalg.norm(x, np.inf) < 1e-10:
-        break
+else:
+    print("Did not converge")
