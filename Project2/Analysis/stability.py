@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import Project2.Test.Teja
+from Project2.Test.Teja import matrix_gen, TDMA
 import copy
 
 
@@ -29,8 +29,8 @@ def diag(vec, k):
             M[i, i] = vec[i]
         return M
     if k == 1:
-        M = np.zeros((n, n), dtype=float)
-        for i in range(n - 1):
+        M = np.zeros((n+1, n+1), dtype=float)
+        for i in range(n):
             M[i, i + 1] = vec[i]
         return M
     raise ValueError("k must be -1, 0, or 1")
@@ -53,9 +53,8 @@ def matmul(A, B):
 
 def getminormat(A, i, j):
     m = copy.deepcopy(A)
-    m.pop(i)
-    for row in m:
-        row.pop(j)
+    m = np.delete(m, i, axis=0)
+    m = np.delete(m, j, axis=1)
     return m
 
 
@@ -99,3 +98,37 @@ def inv(A):
 
 def condnum(J):
     return infnorm(J)*(infnorm(inv(J)))
+
+
+d, l, u, w = matrix_gen(1000, 0, 1, 1e-4)
+J = diag(d, 0) + diag(l, -1) + diag(u, 1)
+print(condnum(J))
+n = 1000
+b = np.zeros(n + 1)
+
+b[0] = w[0]
+b[-1] = w[-1] - 1
+
+
+def f(w):
+    for i in range(1, n):
+        b[i] = w[i + 1] - 2 * w[i] + w[i - 1] + \
+            ((w[i] - w[i - 1])**2) / (4 * (w[i] + 1e-4))
+    b[0] = w[0]
+    b[-1] = w[-1] - 1
+    return b
+
+
+b = f(w)
+
+for i in range(100):
+    x = TDMA(d, l, u, b)
+    w += x
+    if (np.linalg.norm(w) > 1e2):
+        break
+    b = f(w)
+    d, l, u, _ = matrix_gen(1000, 0, 1, 1e-4)
+    J = matmul(J, diag(d, 0) + diag(l, -1) + diag(u, 1))
+    print(condnum(J))
+    if np.linalg.norm(x, np.inf) < 1e-10:
+        break

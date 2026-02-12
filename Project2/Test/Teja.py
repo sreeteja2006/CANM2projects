@@ -3,7 +3,6 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
-tkinter.use("Agg")
 
 
 def matrix_gen(n: int, alpha, beta, h):
@@ -89,13 +88,3 @@ for i in range(100):
 
 plt.plot(w)
 plt.savefig("solution_plot.png")
-
-
-root = tk.Tk()
-root.title("My First Tkinter App")
-root.geometry("300x150")  # Set the initial size of the window
-
-label = tk.Label(root, text="Hello, world!", font=("Helvetica", 16))
-label.pack(pady=20)  # Add some vertical padding
-
-root.mainloop()
