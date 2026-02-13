@@ -1,23 +1,37 @@
 import numpy as np
-from callable import Callable
+from typing import Callable
+from Jacobian import Jacobian
 
 class FDM_Solver:
+    def __init__(self,F,Fy,Fyp,N, x,w = None):
+        pass
 
     def Norm_inf(vector :np.ndarray) -> float:
         return vector.max()
 
-    def solver(self,Generate_Jacobian :callable, Generate_Residual :callable,TDMA : callable ,initial_guess :np.ndarray,x : np.ndarray ,tol :float = 1e-6, max_iter :int = 1000) -> np.ndarray:
-        h = x[1] - x[0]
+    def solver(self, jacobian, residual, TDMA, initial_guess, x,
+           tol=1e-6, max_iter=100):
+
         w = initial_guess.copy()
+
         for k in range(max_iter):
-            u, l, d = Generate_Jacobian(self)
-            b = Generate_Residual(self)
+
+            u, l, d = jacobian.build(w, x)
+            b = residual.build(w, x)
 
             delta = TDMA(u, l, d, -b)
-            w = w + delta
+            w += delta
 
             if self.Norm_inf(delta) < tol:
                 print(f"Converged in {k+1} iterations")
                 break
 
         return w
+
+    def Y_FDM(i,x, w, h):
+        return w[i]
+    def Yp_FDM(i,x, w, h):
+        return (w[i+1] - w[i-1]) / (2*h)
+    def Ypp_FDM(i,x, w, h):
+        return (w[i+1] - 2*w[i] + w[i-1]) / (h**2)
+
