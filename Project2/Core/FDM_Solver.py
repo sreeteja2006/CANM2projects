@@ -1,10 +1,11 @@
 import numpy as np
 from typing import Callable
-from Jacobian import Jacobian
-from Boundary_Conditions import Boundary_Conditions, BCType
-from TDMA import TDMA
-from Function_Generator import Function_Generator
-from Residual import Residual
+
+from .Jacobian import Jacobian
+from .Boundary_Conditions import Boundary_Conditions
+from .TDMA import TDMA
+from .Function_Generator import Function_Generator
+from .Residual import Residual
 
 class FDM_Solver:
     def __init__(self,F,Fy,Fyp,N, domain,BC,w0 = None):

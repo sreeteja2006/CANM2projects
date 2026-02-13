@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class Jacobian:
 
     def __init__(self, fu, fl, fd, bc_left_jac, bc_right_jac):
