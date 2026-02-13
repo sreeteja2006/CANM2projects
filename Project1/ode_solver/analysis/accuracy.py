@@ -74,62 +74,62 @@ def analytical_solution(x):
     return 0.0001 * (np.sqrt(100020000 * x_arr + 1) - 1)
 
 
-ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
-sol_RK2, x,_,_,_ = ob.solve()
+# ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
+# sol_RK2, x,_,_,_ = ob.solve()
 
-ob.set_method(RK4)
-sol_RK4, x,_,_,_ = ob.solve()
-ob.set_method(ABM2)
-sol_ABM2, x,_,_,_ = ob.solve()
-ob.set_method(ABM4)
-sol_ABM4, x,_,_,_ = ob.solve()
+# ob.set_method(RK4)
+# sol_RK4, x,_,_,_ = ob.solve()
+# ob.set_method(ABM2)
+# sol_ABM2, x,_,_,_ = ob.solve()
+# ob.set_method(ABM4)
+# sol_ABM4, x,_,_,_ = ob.solve()
 
-# analytic evaluated on a fine grid and on the solver's x for alignment
-x_analytical = np.linspace(0, 1, 1000)
-sol_analytical_highres = analytical_solution(x_analytical)
-sol_analytical_on_x = analytical_solution(x)
+# # analytic evaluated on a fine grid and on the solver's x for alignment
+# x_analytical = np.linspace(0, 1, 1000)
+# sol_analytical_highres = analytical_solution(x_analytical)
+# sol_analytical_on_x = analytical_solution(x)
 
-plt.figure(figsize=(10, 6))
+# plt.figure(figsize=(10, 6))
 
-# RK2 subplot
-plt.subplot(2, 2, 1)
-plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
-plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
-plt.title('RK2 Solution vs Analytical (aligned)')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
+# # RK2 subplot
+# plt.subplot(2, 2, 1)
+# plt.plot(x, sol_RK2[:, 0], label='RK2', linestyle='--')
+# plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
+# plt.title('RK2 Solution vs Analytical (aligned)')
+# plt.xlabel('x')
+# plt.ylabel('y')
+# plt.legend()
 
-# RK4 subplot
-plt.subplot(2, 2, 2)
-plt.plot(x, sol_RK4[:, 0], label='RK4', linestyle='--')
-plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
-plt.title('RK4 Solution vs Analytical (aligned)')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
+# # RK4 subplot
+# plt.subplot(2, 2, 2)
+# plt.plot(x, sol_RK4[:, 0], label='RK4', linestyle='--')
+# plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
+# plt.title('RK4 Solution vs Analytical (aligned)')
+# plt.xlabel('x')
+# plt.ylabel('y')
+# plt.legend()
 
-# ABM2 subplot
-plt.subplot(2, 2, 3)
-plt.plot(x, sol_ABM2[:,0], label='ABM2', linestyle='--')
-plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
-plt.title('ABM2 Solution vs Analytical (aligned)')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
+# # ABM2 subplot
+# plt.subplot(2, 2, 3)
+# plt.plot(x, sol_ABM2[:,0], label='ABM2', linestyle='--')
+# plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
+# plt.title('ABM2 Solution vs Analytical (aligned)')
+# plt.xlabel('x')
+# plt.ylabel('y')
+# plt.legend()
 
-# ABM4 subplot
-plt.subplot(2, 2, 4)
-plt.plot(x, sol_ABM4[:, 0], label='ABM4', linestyle='--')
-plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
-plt.title('ABM4 Solution vs Analytical (aligned)')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
+# # ABM4 subplot
+# plt.subplot(2, 2, 4)
+# plt.plot(x, sol_ABM4[:, 0], label='ABM4', linestyle='--')
+# plt.plot(x_analytical, sol_analytical_highres, label='Analytical', linestyle='-')
+# plt.title('ABM4 Solution vs Analytical (aligned)')
+# plt.xlabel('x')
+# plt.ylabel('y')
+# plt.legend()
 
-plt.tight_layout()
-# save figure to PNG next to this script (use high DPI)
-outpath = os.path.join(os.path.dirname(__file__), 'accuracy_plot.png')
+# plt.tight_layout()
+# # save figure to PNG next to this script (use high DPI)
+# outpath = os.path.join(os.path.dirname(__file__), 'accuracy_plot.png')
 # =======
 # =======
 # >>>>>>> Stashed changes
@@ -140,7 +140,7 @@ ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, gues
 methods = [(RK2, 'RK2'), (RK4, 'RK4'), (ABM2, 'ABM2'), (ABM4, 'ABM4')]
 
 # Step sizes to test
-h_values = [1e-3, 1e-4, 1e-5, 1e-6]
+h_values = [1e-3, 5e-3, 1e-4, 5e-4]
 
 # Keep originals to restore later
 original_h = ob.get_h()
