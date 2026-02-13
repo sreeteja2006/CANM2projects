@@ -23,19 +23,3 @@ class Residual:
 
         return res
     
-
-class Residual:
-    
-
-    def build(self, w, x):
-        N = self.N
-        h = x[1] - x[0]
-        res = np.zeros(N + 1)
-
-        res[0] = self.left_bc_res(w, h)
-        res[N] = self.right_bc_res(w, h)
-
-        for i in range(1, N):
-            res[i] = self.F(i, x, w, h)
-
-        return res
