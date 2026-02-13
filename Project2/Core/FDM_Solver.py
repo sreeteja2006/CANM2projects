@@ -7,6 +7,7 @@ from .TDMA import TDMA
 from .Function_Generator import Function_Generator
 from .Residual import Residual
 
+#minor change
 class FDM_Solver:
     def __init__(self,F,Fy,Fyp,N, domain,BC,w0 = None):
         """_summary_
