@@ -13,9 +13,6 @@ def load_config(filepath):
     BC = np.array(data['BC'])
     
     # 2. Convert function strings to executable Python functions
-    # We prefix "lambda x, y, yp: " so Python treats the string as a function definition.
-    # We pass {'np': np} to eval() so it knows what "np" means in your formulas.
-    
     funcs = data['functions']
     
     # Compile F(x, y, yp)
@@ -27,8 +24,7 @@ def load_config(filepath):
     # Compile Fyp(x, y, yp)
     Fyp_func = eval(f"lambda x, y, yp: {funcs['Fyp']}", {"np": np})
     
-    # Compile Analytical Solution (only takes x)
-    # Check if 'analytical' exists in json to avoid errors if you remove it later
+    # Compile Analytical Solution (Optional)
     if 'analytical' in funcs:
         ana_func = eval(f"lambda x: {funcs['analytical']}", {"np": np})
     else:
@@ -38,7 +34,6 @@ def load_config(filepath):
 
 # --- Main Execution ---
 
-# Load everything from the file
 config_path = 'config.json'
 try:
     N, domain, BC, F, Fy, Fyp, analytical_solution = load_config(config_path)
@@ -53,19 +48,31 @@ solution = solver.solver()
 
 print("Numerical Solution:", solution)
 
-# Plotting
-if analytical_solution:
-    x = np.linspace(domain[0], domain[1], N+1)
-    analytical_values = analytical_solution(x)
-    print("Analytical Solution:", analytical_values)
-    print("Max Error:", np.max(np.abs(analytical_values - solution)))
+# --- Plotting Section ---
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(x, analytical_values, label='Analytical', marker='o', linestyle='-', alpha=0.6)
-    plt.plot(x, solution, label='Numerical (FDM)', marker='x', linestyle='--')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title(f'BVP Solver Output (N={N})')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+# 1. Define x-axis grid (Needed for both plots)
+x = np.linspace(domain[0], domain[1], N+1)
+
+plt.figure(figsize=(10, 6))
+
+# 2. Plot Numerical Solution (Always runs)
+plt.plot(x, solution, label='Numerical (FDM)', linestyle='--', color='blue')
+
+# 3. Plot Analytical Solution (Only runs if available)
+if analytical_solution:
+    try:
+        analytical_values = analytical_solution(x)
+        print("Analytical Solution:", analytical_values)
+        print("Max Error:", np.max(np.abs(analytical_values - solution)))
+        
+        plt.plot(x, analytical_values, label='Analytical', marker='o', linestyle='-', alpha=0.6, color='orange')
+    except Exception as e:
+        print(f"Warning: Could not evaluate analytical solution: {e}")
+
+# 4. Finalize Plot
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title(f'BVP Solver Output (N={N})')
+plt.legend()
+plt.grid(True)
+plt.show()
