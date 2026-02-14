@@ -22,8 +22,15 @@ class FDM_Solver:
             w (Vector, optional): Initial guess vector. Defaults to None.
         """
         self.F = F
-        self.Fy = Fy
-        self.Fyp = Fyp
+        if Fy is None:
+            self.Fy = self._approx_Fy
+        else:
+            self.Fy = Fy
+
+        if Fyp is None:
+            self.Fyp = self._approx_Fyp
+        else:
+            self.Fyp = Fyp
         self.N = N
         self.xstart = domain[0]
         self.xend = domain[1]
@@ -34,7 +41,7 @@ class FDM_Solver:
         self.right_bc_jac = self.Boundary_Conditions.build_right_bc_jac(self.Fy, self.Fyp, self.xend)
         self.left_bc_res = self.Boundary_Conditions.build_left_bc_res(self.F, self.xstart)
         self.right_bc_res = self.Boundary_Conditions.build_right_bc_res(self.F, self.xend)
-        self.Function_Generator = Function_Generator(F, Fy, Fyp)
+        self.Function_Generator = Function_Generator(F, self.Fy, self.Fyp)
         self.fu, self.fl, self.fd = self.Function_Generator.build_tridiagonal_terms()
         self.Residual_F = self.Function_Generator.build_residual_function()
 
@@ -43,6 +50,22 @@ class FDM_Solver:
         else:
             self.w0 = w0
     
+
+    def _approx_Fy(self, x, y, yp):
+        eps = 1e-8 * max(1.0, abs(y))
+        return (
+            self.F(x, y + eps, yp)
+            - self.F(x, y - eps, yp)
+        ) / (2 * eps)
+
+
+    def _approx_Fyp(self, x, y, yp):
+        eps = 1e-8 * max(1.0, abs(yp))
+        return (
+            self.F(x, y, yp + eps)
+            - self.F(x, y, yp - eps)
+        ) / (2 * eps)
+
 
     def Norm_inf(self, vector) -> float:
         return float(max(abs(x) for x in vector))
