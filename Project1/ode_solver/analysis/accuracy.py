@@ -2,26 +2,14 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
-# <<<<<<< Updated upstream
-# <<<<<<< Updated upstream
-# =======
 from pathlib import Path
-# >>>>>>> Stashed changes
-# =======
 from pathlib import Path
-# >>>>>>> Stashed changes
 import matplotlib.pyplot as plt
 from core.core import odesolver
 from methods.RK_2 import RK2
 from methods.RK_4 import RK4
 from methods.ABM_2 import ABM2
 from methods.ABM_4 import ABM4
-
-# <<<<<<< Updated upstream
-# <<<<<<< Updated upstream
-# =======
-# =======
-# >>>>>>> Stashed changes
 # Try to load precomputed analytical solution values from y_rk2.txt
 _y_data = None
 _x_data = None
@@ -40,11 +28,6 @@ if data_path.exists():
     except Exception:
         _y_data = None
         _x_data = None
-
-# <<<<<<< Updated upstream
-# >>>>>>> Stashed changes
-# =======
-# >>>>>>> Stashed changes
 def f(u, x):
     return np.array([u[1], -u[1]**2/(u[0] + 1e-4)])
 
@@ -130,9 +113,6 @@ plt.legend()
 plt.tight_layout()
 # save figure to PNG next to this script (use high DPI)
 outpath = os.path.join(os.path.dirname(__file__), 'accuracy_plot.png')
-# =======
-# =======
-# >>>>>>> Stashed changes
  # (y_ref loading and analytical_solution moved earlier)
 ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, guess=[0.5, 1], xstart=0, xend=1, h=1e-5)
 
@@ -174,10 +154,6 @@ ob.set_h(original_h)
 
 # Save and show
 outpath = os.path.join(os.path.dirname(__file__), 'accuracy_error_plot.png')
-# <<<<<<< Updated upstream
-# >>>>>>> Stashed changes
-# =======
-# >>>>>>> Stashed changes
 plt.savefig(outpath, dpi=300)
 plt.show()
 
