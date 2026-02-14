@@ -8,7 +8,7 @@ from Core.Loader import load_config
 
 config_path = 'config.json'
 try:
-    N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter = load_config(config_path)
+    N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter,_ = load_config(config_path)
     print(f"Successfully loaded configuration from {config_path}")
 except FileNotFoundError:
     print(f"Error: Could not find {config_path}")
