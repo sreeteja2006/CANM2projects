@@ -1,7 +1,7 @@
 import json
 import numpy as np
-from Project2.Core.Loader import load_config
-from Project2.Core.FDM_Solver import FDM_Solver
+from Core.Loader import load_config
+from Core.FDM_Solver import FDM_Solver
 
 
 def save_config(data, filepath="config.json"):
@@ -67,7 +67,7 @@ def manual_input():
 
 def main():
 
-    print("Nonlinear BVP Solver (FDM + Newton)\n")
+    print("Welcome to the Nonlinear BVP Solver (for 2nd order only)\n")
 
     choice = input("Load problem from config.json? (y/n): ").lower()
 
