@@ -61,8 +61,6 @@ def infnorm_tridiag(d, l, u):
 
     return max_row_sum
 
-# Using J*x = e to get inverse matrix easily (solve one row at a time)
-
 
 def inverse_infnorm_tridiag(d, l, u):
     n = len(d)
@@ -82,6 +80,8 @@ def cond_tridiag(d, l, u):
     return infnorm_tridiag(d, l, u) * inverse_infnorm_tridiag(d, l, u)
 
 
+def eigen_values
+
 n = 100
 eps = 1e-4
 
@@ -94,6 +94,9 @@ for k in range(50):
     d, l, u = jacobian(w, eps)
 
     cond = cond_tridiag(d, l, u)
+    J = np.diag(d) + np.diag(l, -1) + np.diag(u, 1)
+
+    print(f"Eigenvalues of J at iteration {k}:", np.linalg.eigvals(J))
     print(f"Iter {k}: cond(J) = {cond:.3e}")
 
     delta = TDMA(d.copy(), l.copy(), u.copy(), -F)
