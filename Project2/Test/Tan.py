@@ -56,7 +56,7 @@ x = np.linspace(domain[0], domain[1], N+1)
 plt.figure(figsize=(10, 6))
 
 # 2. Plot Numerical Solution (Always runs)
-plt.plot(x, solution, label='Numerical (FDM)', linestyle='--', color='blue')
+plt.plot(x, solution, label='Numerical (FDM)',marker = 'x' ,linestyle='--', color='blue')
 
 # 3. Plot Analytical Solution (Only runs if available)
 if analytical_solution:

@@ -30,10 +30,10 @@ class FDM_Solver:
         self.h = (self.xend - self.xstart) / N
         self.BC = BC
         self.Boundary_Conditions = Boundary_Conditions(BC)
-        self.left_bc_jac = self.Boundary_Conditions.build_left_bc_jac()
-        self.right_bc_jac = self.Boundary_Conditions.build_right_bc_jac()
-        self.left_bc_res = self.Boundary_Conditions.build_left_bc_res()
-        self.right_bc_res = self.Boundary_Conditions.build_right_bc_res()
+        self.left_bc_jac = self.Boundary_Conditions.build_left_bc_jac(self.Fy, self.Fyp, self.xstart)
+        self.right_bc_jac = self.Boundary_Conditions.build_right_bc_jac(self.Fy, self.Fyp, self.xend)
+        self.left_bc_res = self.Boundary_Conditions.build_left_bc_res(self.F, self.xstart)
+        self.right_bc_res = self.Boundary_Conditions.build_right_bc_res(self.F, self.xend)
         self.Function_Generator = Function_Generator(F, Fy, Fyp)
         self.fu, self.fl, self.fd = self.Function_Generator.build_tridiagonal_terms()
         self.Residual_F = self.Function_Generator.build_residual_function()
