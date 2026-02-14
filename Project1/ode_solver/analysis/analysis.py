@@ -1,19 +1,18 @@
+from core.core import odesolver
+from methods.RK_4 import RK4
+from methods.RK_2 import RK2
+from methods.ABM_4 import ABM4
+from methods.ABM_2 import ABM2
+import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 from pathlib import Path
 matplotlib.use('Agg')  # Non-interactive backend for saving plots
-import matplotlib.pyplot as plt
-
-from methods.ABM_2 import ABM2
-from methods.ABM_4 import ABM4
-from methods.RK_2 import RK2
-from methods.RK_4 import RK4
-from core.core import odesolver
 
 
 class analysis:
-    
-    def __init__(self, solver : odesolver):
+
+    def __init__(self, solver: odesolver):
         self.solver = solver
         self.methods = [RK2, RK4, ABM2, ABM4]
         self.methods_str = ['RK2', 'RK4', 'ABM2', 'ABM4']
@@ -25,8 +24,7 @@ class analysis:
         """
         return y_fine[::ratio]
 
-
-    def h_refinement(self,htest):
+    def h_refinement(self, htest):
         original_h = self.solver.get_h()
         original_method = self.solver.get_method()
 
@@ -35,8 +33,8 @@ class analysis:
         methods = [RK2, RK4, ABM2, ABM4]
         method_names = ['RK2', 'RK4', 'ABM2', 'ABM4']
 
-        results = {}
 
+results = {}
         for method, name in zip(methods, method_names):
             self.solver.set_method(method)
 
@@ -83,7 +81,7 @@ class analysis:
         self.solver.set_h(original_h)
 
         return results
-    
+
     def plot_loglog_convergence(self, results):
         plt.figure(figsize=(8, 6))
         plotted = False
