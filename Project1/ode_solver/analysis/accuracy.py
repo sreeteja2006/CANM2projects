@@ -120,7 +120,7 @@ ob = odesolver(order=2, method=RK2, bc=bc, tol=1e-8, max_iter=1000, func=f, gues
 methods = [(RK2, 'RK2'), (RK4, 'RK4'), (ABM2, 'ABM2'), (ABM4, 'ABM4')]
 
 # Step sizes to test
-h_values = [1e-3, 1e-4, 1e-5, 1e-6]
+h_values = [1e-3, 5e-3, 1e-4, 5e-4, 1e-5]
 
 # Keep originals to restore later
 original_h = ob.get_h()

@@ -6,36 +6,36 @@
             "end": 1
         },
         "grid": {
-            "N": 512
+            "N": 4096
         }
     },
 
     "boundary_conditions": {
         "left": {
-            "a": 3,
-            "b": -9,
-            "c": -2
+            "a": 1,
+            "b": 0,
+            "c": 0
         },
         "right": {
-            "a": 0,
-            "b": 1,
-            "c": 0.0625
+            "a": 1,
+            "b": 0,
+            "c": -1
         }
     },
 
     "functions": {
-        "F": "2*y**3",
-        "Fy": "6*y**2",
-        "Fyp": "0"
+        "F": "(-yp**2)/(y + 1e-4)",
+        "Fy": "(yp**2)/(y + 1e-4)**2",
+        "Fyp": "-2*yp/(y + 1e-4)"
     },
 
     "solver": {
         "tolerance": 1e-8,
-        "max_iterations": 50
+        "max_iterations": 100
     },
 
     "postprocessing": {
-        "analytical_solution": "1/(x+3)",
+        "analytical_solution": "1e-4*(np.sqrt(100020000 * x + 1) - 1)",
         "compute_error": true
     }
 }
