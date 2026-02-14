@@ -37,20 +37,106 @@ class Boundary_Conditions:
 
         return bc_types
 
-    def build_left_bc_jac(self):
-        if self.bc_types[0] == BCType.DIRICHLET:
-            return lambda w, h: (1.0, 0.0)
+    def build_left_bc_jac(self, Fy, Fyp, x0):
 
-    def build_right_bc_jac(self):
+        a, b, c = self.BC[0]
+
+        if self.bc_types[0] == BCType.DIRICHLET:
+            return lambda w, h: (a, 0.0)
+
+        else:
+
+            def jac(w, h):
+
+                y0 = w[0]
+                Yp = (-c - a*y0) / b
+
+                d0 = (
+                    2*(1 - h*a/b)
+                    + h**2 * Fy(x0, y0, Yp)
+                    - h**2 * (a/b) * Fyp(x0, y0, Yp)
+                )
+
+                u0 = -2.0
+
+                return d0, u0
+
+            return jac
+
+
+    def build_right_bc_jac(self, Fy, Fyp, xN):
+
+        a, b, c = self.BC[1]
+
         if self.bc_types[1] == BCType.DIRICHLET:
-            return lambda w, h: (0.0, 1.0)
+            return lambda w, h: (0.0, a)
+        else:
 
-    def build_left_bc_res(self):
+            def jac(w, h):
+
+                yNp1 = w[-1]
+                yp = (-c - a*yNp1) / b
+
+                dNp1 = (
+                    2*(1 + h*a/b)
+                    + h**2 * Fy(xN, yNp1, yp)
+                    - h**2 * (a/b) * Fyp(xN, yNp1, yp)
+                )
+
+                lNp1 = -2.0
+
+                return lNp1, dNp1
+
+            return jac
+
+    def build_left_bc_res(self, F, x0):
+
+        a, b, c = self.BC[0]
+
         if self.bc_types[0] == BCType.DIRICHLET:
-            c = self.BC[0][2]
-            return lambda w, h: w[0] + c
+            return lambda w, h: a*w[0] + c
 
-    def build_right_bc_res(self):
+        else:
+
+            def res(w, h):
+
+                y0 = w[0]
+                y1 = w[1]
+
+                yp = (-c - a*y0) / b
+
+                return (
+                    2*(1 - h*a/b)*y0
+                    - 2*y1
+                    + h**2 * F(x0, y0, yp)
+                    - 2*h *c/b
+                )
+
+            return res
+
+
+    def build_right_bc_res(self, F, xN):
+
+    
+        a, b, c = self.BC[1]
+
         if self.bc_types[1] == BCType.DIRICHLET:
             c = self.BC[1][2]
-            return lambda w, h: w[-1] + c
+            return lambda w, h: a*w[-1] + c
+        else:
+            
+            def res(w, h):
+
+                yNp1 = w[-1]
+                yN = w[-2]
+
+                yp = (-c - a*yNp1) / b
+
+                return (
+                    2*(1 + h*a/b)*yNp1
+                    - 2*yN
+                    + h**2 * F(xN, yNp1, yp)
+                    + 2*h *c/b
+                )
+
+            return res
