@@ -19,32 +19,8 @@ class Boundary_Conditions:
             [[a_left, b_left, c_left],
              [a_right, b_right, c_right]]
         """
-        # Validate BC input
-        if BC is None:
-            raise ValueError("BC (boundary conditions) must be provided")
-        
-        # Convert to numpy array
-        try:
-            BC = np.asarray(BC, dtype=float)
-        except (ValueError, TypeError) as e:
-            raise TypeError("BC must be convertible to numeric array") from e
-        
-        # Validate shape
-        if BC.shape != (2, 3):
-            raise ValueError(f"BC must have shape (2, 3), got {BC.shape}")
-        
-        # Check for NaN or Inf
-        if np.any(np.isnan(BC)) or np.any(np.isinf(BC)):
-            raise ValueError("BC contains NaN or infinite values")
-        
-        # Validate that at least one coefficient (a or b) is non-zero for each boundary
-        for i, side in enumerate(["left", "right"]):
-            a, b, c = BC[i]
-            if abs(a) < ZERO_TOLERANCE and abs(b) < ZERO_TOLERANCE:
-                raise ValueError(f"Both a and b are zero for {side} BC. At least one must be non-zero.")
-        
-        self.BC = BC
-        self.bc_types = self.get_bc_type(BC)
+        self.BC = np.asarray(BC, dtype=float)
+        self.bc_types = self.get_bc_type(self.BC)
 
 
     @staticmethod
@@ -88,23 +64,6 @@ class Boundary_Conditions:
         Returns:
         Function that computes left BC Jacobian entries
         """
-        # Validate inputs
-        if Fy is None or Fyp is None:
-            raise ValueError("Fy and Fyp must be provided for Jacobian computation")
-        if not callable(Fy):
-            raise TypeError("Fy must be callable")
-        if not callable(Fyp):
-            raise TypeError("Fyp must be callable")
-        if x0 is None:
-            raise ValueError("x0 (left boundary point) must be provided")
-        
-        try:
-            x0 = float(x0)
-        except (ValueError, TypeError) as e:
-            raise TypeError("x0 must be numeric") from e
-        
-        if np.isnan(x0) or np.isinf(x0):
-            raise ValueError("x0 is NaN or infinite")
 
         a, b, c = self.BC[0]
 
@@ -117,11 +76,7 @@ class Boundary_Conditions:
                 raise ValueError("Division by zero: b coefficient is zero for non-Dirichlet left BC")
 
             def jac(w, h):
-                # Validate inputs
-                if w is None or h is None:
-                    raise ValueError("w and h must be provided")
-                if len(w) < 1:
-                    raise ValueError("w must have at least 1 element")
+
                 if abs(h) < ZERO_TOLERANCE:
                     raise ValueError(f"Grid spacing h is too small or zero: {h}")
 
@@ -174,23 +129,6 @@ class Boundary_Conditions:
         Returns:
         Function that computes right BC Jacobian entries
         """
-        # Validate inputs
-        if Fy is None or Fyp is None:
-            raise ValueError("Fy and Fyp must be provided for Jacobian computation")
-        if not callable(Fy):
-            raise TypeError("Fy must be callable")
-        if not callable(Fyp):
-            raise TypeError("Fyp must be callable")
-        if xN is None:
-            raise ValueError("xN (right boundary point) must be provided")
-        
-        try:
-            xN = float(xN)
-        except (ValueError, TypeError) as e:
-            raise TypeError("xN must be numeric") from e
-        
-        if np.isnan(xN) or np.isinf(xN):
-            raise ValueError("xN is NaN or infinite")
 
         a, b, c = self.BC[1]
 
@@ -202,27 +140,22 @@ class Boundary_Conditions:
                 raise ValueError("Division by zero: b coefficient is zero for non-Dirichlet right BC")
 
             def jac(w, h):
-                # Validate inputs
-                if w is None or h is None:
-                    raise ValueError("w and h must be provided")
-                if len(w) < 1:
-                    raise ValueError("w must have at least 1 element")
                 if abs(h) < ZERO_TOLERANCE:
                     raise ValueError(f"Grid spacing h is too small or zero: {h}")
 
-                yNp1 = w[-1]
+                yN = w[-1]
                 
-                if np.isnan(yNp1) or np.isinf(yNp1):
-                    raise ValueError("yNp1 is NaN or infinite")
+                if np.isnan(yN) or np.isinf(yN):
+                    raise ValueError("yN is NaN or infinite")
                 
-                yp = (-c - a*yNp1) / b
+                yp = (-c - a*yN) / b
                 
                 if np.isnan(yp) or np.isinf(yp):
                     raise ValueError("Computed yp is NaN or infinite")
 
                 try:
-                    Fy_val = Fy(xN, yNp1, yp)
-                    Fyp_val = Fyp(xN, yNp1, yp)
+                    Fy_val = Fy(xN, yN, yp)
+                    Fyp_val = Fyp(xN, yN, yp)
                 except Exception as e:
                     raise RuntimeError(f"Error evaluating Fy or Fyp at right boundary: {e}") from e
                 
@@ -231,18 +164,18 @@ class Boundary_Conditions:
                 if np.isnan(Fyp_val) or np.isinf(Fyp_val):
                     raise ValueError("Fyp returned NaN or infinite at right boundary")
 
-                dNp1 = (
+                dN = (
                     2*(1 + h*a/b)
                     + h**2 * Fy_val
                     - h**2 * (a/b) * Fyp_val
                 )
 
-                lNp1 = -2.0
+                lN = -2.0
                 
-                if np.isnan(dNp1) or np.isinf(dNp1):
-                    raise ValueError("Computed dNp1 is NaN or infinite")
+                if np.isnan(dN) or np.isinf(dN):
+                    raise ValueError("Computed dN is NaN or infinite")
 
-                return lNp1, dNp1
+                return lN, dN
 
             return jac
 
@@ -257,21 +190,6 @@ class Boundary_Conditions:
         Returns:
         Function that computes left BC residual
         """
-        # Validate inputs
-        if F is None:
-            raise ValueError("F must be provided")
-        if not callable(F):
-            raise TypeError("F must be callable")
-        if x0 is None:
-            raise ValueError("x0 (left boundary point) must be provided")
-        
-        try:
-            x0 = float(x0)
-        except (ValueError, TypeError) as e:
-            raise TypeError("x0 must be numeric") from e
-        
-        if np.isnan(x0) or np.isinf(x0):
-            raise ValueError("x0 is NaN or infinite")
 
         a, b, c = self.BC[0]
 
@@ -284,11 +202,7 @@ class Boundary_Conditions:
                 raise ValueError("Division by zero: b coefficient is zero for non-Dirichlet left BC")
 
             def res(w, h):
-                # Validate inputs
-                if w is None or h is None:
-                    raise ValueError("w and h must be provided")
-                if len(w) < 2:
-                    raise ValueError("w must have at least 2 elements for non-Dirichlet BC")
+
                 if abs(h) < ZERO_TOLERANCE:
                     raise ValueError(f"Grid spacing h is too small or zero: {h}")
 
@@ -337,21 +251,6 @@ class Boundary_Conditions:
         Returns:
         Function that computes right BC residual
         """
-        # Validate inputs
-        if F is None:
-            raise ValueError("F must be provided")
-        if not callable(F):
-            raise TypeError("F must be callable")
-        if xN is None:
-            raise ValueError("xN (right boundary point) must be provided")
-        
-        try:
-            xN = float(xN)
-        except (ValueError, TypeError) as e:
-            raise TypeError("xN must be numeric") from e
-        
-        if np.isnan(xN) or np.isinf(xN):
-            raise ValueError("xN is NaN or infinite")
     
         a, b, c = self.BC[1]
 
@@ -364,11 +263,7 @@ class Boundary_Conditions:
                 raise ValueError("Division by zero: b coefficient is zero for non-Dirichlet right BC")
             
             def res(w, h):
-                # Validate inputs
-                if w is None or h is None:
-                    raise ValueError("w and h must be provided")
-                if len(w) < 2:
-                    raise ValueError("w must have at least 2 elements for non-Dirichlet BC")
+
                 if abs(h) < ZERO_TOLERANCE:
                     raise ValueError(f"Grid spacing h is too small or zero: {h}")
 
