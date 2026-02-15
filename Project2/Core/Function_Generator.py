@@ -96,6 +96,7 @@ class Function_Generator:
                 raise ValueError(f"x[{i}] is NaN or infinite")
             if np.isnan(yi) or np.isinf(yi):
                 raise ValueError(f"w[{i}] is NaN or infinite")
+            
             if np.isnan(ypi) or np.isinf(ypi):
                 raise ValueError(f"Computed ypi is NaN or infinite at i={i}")
 
