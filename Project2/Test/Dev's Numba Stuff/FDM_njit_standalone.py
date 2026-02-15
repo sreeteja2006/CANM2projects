@@ -36,6 +36,11 @@ from numba import njit
 import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
+from pathlib import Path
+
+# ensure output plots go into Project2/Plots regardless of where this script is run
+PLOTS_DIR = Path(__file__).parent.parent.parent / "Plots"
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================
 # PART 1: Problem Definition (HARDCODED)
@@ -44,7 +49,7 @@ from tqdm import tqdm
 # Domain parameters
 X_START = 0.0
 X_END = 1.0
-N = 2**26  # number of interior grid points
+N = 2**27  # number of interior grid points
 
 # Boundary conditions (Dirichlet: y(x0) = c0, y(x1) = c1)
 BC_LEFT_VALUE = 0.0      # y(0) = 0
@@ -405,8 +410,10 @@ if __name__ == "__main__":
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig('fdm_njit_solution.png', dpi=150)
-    print(f"\nPlot saved to: fdm_njit_solution.png")
+    # save into Project2 Plots folder
+    save_path = PLOTS_DIR / 'fdm_njit_solution.png'
+    plt.savefig(save_path, dpi=150)
+    print(f"\nPlot saved to: {save_path}")
     plt.show()
     
     print("\n" + "="*70)
