@@ -2,6 +2,10 @@ import json
 import numpy as np
 import os
 from .constants import MAX_GRID_SIZE, MAX_ITERATIONS
+from .validation import (
+    validate_positive_integer, validate_domain, validate_tolerance,
+    validate_finite_value
+)
 
 def load_config(filepath="config.json"):
     """
@@ -50,17 +54,7 @@ def load_config(filepath="config.json"):
     except KeyError as e:
         raise KeyError(f"Missing required key: {e}") from e
     
-    if not isinstance(N, int):
-        try:
-            N = int(N)
-        except (ValueError, TypeError) as e:
-            raise TypeError(f"N must be an integer, got {type(N).__name__}") from e
-    
-    if N < 1:
-        raise ValueError(f"N must be positive, got {N}")
-    
-    if N > MAX_GRID_SIZE:
-        raise ValueError(f"N is too large (max {MAX_GRID_SIZE}), got {N}")
+    N = validate_positive_integer(N, "N", max_val=MAX_GRID_SIZE)
     
     # Validate and extract domain
     try:
@@ -76,14 +70,7 @@ def load_config(filepath="config.json"):
     except (ValueError, TypeError) as e:
         raise TypeError(f"Domain values must be numeric: {e}") from e
     
-    if np.isnan(domain_start) or np.isinf(domain_start):
-        raise ValueError(f"Domain start is NaN or infinite: {domain_start}")
-    if np.isnan(domain_end) or np.isinf(domain_end):
-        raise ValueError(f"Domain end is NaN or infinite: {domain_end}")
-    
-    if domain_start >= domain_end:
-        raise ValueError(f"Domain start must be less than end: [{domain_start}, {domain_end}]")
-    
+    validate_domain(domain_start, domain_end)
     domain = (domain_start, domain_end)
     
     # Validate and extract boundary conditions
@@ -185,28 +172,9 @@ def load_config(filepath="config.json"):
         raise KeyError(f"Missing required solver parameter: {e}") from e
     
     # Validate tolerance
-    try:
-        tol = float(tol)
-    except (ValueError, TypeError) as e:
-        raise TypeError(f"tolerance must be numeric: {e}") from e
-    
-    if tol <= 0:
-        raise ValueError(f"tolerance must be positive, got {tol}")
-    if tol > 1:
-        raise ValueError(f"tolerance seems too large (>1), got {tol}")
-    if np.isnan(tol) or np.isinf(tol):
-        raise ValueError("tolerance is NaN or infinite")
+    tol = validate_tolerance(tol, "tolerance")
     
     # Validate max_iter
-    if not isinstance(max_iter, int):
-        try:
-            max_iter = int(max_iter)
-        except (ValueError, TypeError) as e:
-            raise TypeError(f"max_iterations must be an integer: {e}") from e
-    
-    if max_iter < 1:
-        raise ValueError(f"max_iterations must be positive, got {max_iter}")
-    if max_iter > MAX_ITERATIONS:
-        raise ValueError(f"max_iterations is too large (max {MAX_ITERATIONS}), got {max_iter}")
+    max_iter = validate_positive_integer(max_iter, "max_iterations", max_val=MAX_ITERATIONS)
     
     return N, domain, BC, F_func, Fy_func, Fyp_func, ana_func, tol, max_iter, compute_error

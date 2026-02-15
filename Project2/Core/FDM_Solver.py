@@ -5,6 +5,10 @@ import warnings
 from .constants import (ZERO_TOLERANCE, DERIVATIVE_EPSILON, MIN_DERIVATIVE_EPSILON,
                         MAX_GRID_SIZE, MAX_ITERATIONS, DERIVATIVE_VALIDATION_REL_TOL,
                         DERIVATIVE_VALIDATION_ABS_TOL)
+from .validation import (validate_not_none, validate_callable, validate_positive_integer,
+                          validate_array_conversion, validate_1d_array, validate_nan_inf,
+                          validate_array_length, validate_tolerance, validate_finite_value,
+                          validate_bc_coefficients, validate_in_range)
 from .Jacobian import Jacobian
 from .Boundary_Conditions import Boundary_Conditions
 from .TDMA import TDMA
@@ -26,57 +30,27 @@ class FDM_Solver:
             w0 (Vector, optional): Initial guess vector. Defaults to None.
         """
         # Validate F
-        if F is None:
-            raise ValueError("F function must be provided")
-        if not callable(F):
-            raise TypeError("F must be callable")
+        F = validate_not_none(F, "F")
+        F = validate_callable(F, "F")
         
-        # Validate Fy and Fyp
-        if Fy is not None and not callable(Fy):
-            raise TypeError("Fy must be callable or None")
-        if Fyp is not None and not callable(Fyp):
-            raise TypeError("Fyp must be callable or None")
+        # Validate Fy and Fyp (can be None or callable)
+        if Fy is not None:
+            Fy = validate_callable(Fy, "Fy")
+        if Fyp is not None:
+            Fyp = validate_callable(Fyp, "Fyp")
         
         # Validate N
-        if N is None:
-            raise ValueError("N (number of grid intervals) must be provided")
-        if not isinstance(N, (int, np.integer)):
-            raise TypeError(f"N must be an integer, got {type(N).__name__}")
-        if N < 2:
-            raise ValueError(f"N must be at least 2, got {N}")
-        if N > MAX_GRID_SIZE:
-            raise ValueError(f"N is too large (max {MAX_GRID_SIZE}), got {N}")
+        N = validate_positive_integer(N, "N", min_val=2, max_val=MAX_GRID_SIZE)
         
         # Validate domain
-        if domain is None:
-            raise ValueError("domain must be provided")
-        if not isinstance(domain, (tuple, list)) or len(domain) != 2:
-            raise ValueError("domain must be a tuple or list of length 2 (start, end)")
+        domain = validate_not_none(domain, "domain")
+        xstart, xend = validate_finite_value(domain[0], "domain_start"), validate_finite_value(domain[1], "domain_end")
         
-        try:
-            xstart = float(domain[0])
-            xend = float(domain[1])
-        except (ValueError, TypeError) as e:
-            raise TypeError("domain values must be numeric") from e
-        
-        if np.isnan(xstart) or np.isinf(xstart):
-            raise ValueError(f"domain start is NaN or infinite: {xstart}")
-        if np.isnan(xend) or np.isinf(xend):
-            raise ValueError(f"domain end is NaN or infinite: {xend}")
         if xstart >= xend:
             raise ValueError(f"domain start must be less than end: [{xstart}, {xend}]")
         
         # Validate BC
-        if BC is None:
-            raise ValueError("BC (boundary conditions) must be provided")
-        
-        try:
-            BC = np.asarray(BC, dtype=float)
-        except (ValueError, TypeError) as e:
-            raise TypeError("BC must be convertible to numeric array") from e
-        
-        if BC.shape != (2, 3):
-            raise ValueError(f"BC must have shape (2, 3), got {BC.shape}")
+        BC = validate_bc_coefficients(BC)
         
         # Store validated parameters
         self.F = F
@@ -134,18 +108,10 @@ class FDM_Solver:
         if w0 is None:
             self.w0 = np.linspace(self.xstart, self.xend, self.N + 1)
         else:
-            try:
-                w0 = np.asarray(w0, dtype=float)
-            except (ValueError, TypeError) as e:
-                raise TypeError("w0 must be convertible to numeric array") from e
-            
-            if w0.ndim != 1:
-                raise ValueError("w0 must be a 1-dimensional array")
-            if len(w0) != self.N + 1:
-                raise ValueError(f"w0 must have length {self.N + 1}, got {len(w0)}")
-            if np.any(np.isnan(w0)) or np.any(np.isinf(w0)):
-                raise ValueError("w0 contains NaN or infinite values")
-            
+            w0 = validate_array_conversion(w0, "w0")
+            w0 = validate_1d_array(w0, "w0")
+            w0 = validate_array_length(w0, self.N + 1, "w0")
+            w0 = validate_nan_inf(w0, "w0")
             self.w0 = w0
     
     def _validate_partial_derivative(self, user_func, func_name):
@@ -276,21 +242,13 @@ class FDM_Solver:
         Returns:
         Infinity norm as float
         """
-        if vector is None:
-            raise ValueError("vector must be provided")
-        
-        try:
-            vector = np.asarray(vector, dtype=float)
-        except (ValueError, TypeError) as e:
-            raise TypeError("vector must be convertible to numeric array") from e
+        vector = validate_not_none(vector, "vector")
+        vector = validate_array_conversion(vector, "vector")
+        vector = validate_1d_array(vector, "vector")
+        vector = validate_nan_inf(vector, "vector")
         
         if len(vector) == 0:
             raise ValueError("vector must not be empty")
-        
-        if np.any(np.isnan(vector)):
-            raise ValueError("vector contains NaN values")
-        if np.any(np.isinf(vector)):
-            return float('inf')
         
         return float(np.max(np.abs(vector)))
 
@@ -306,31 +264,8 @@ class FDM_Solver:
         w: Solution vector
         """
         # Validate parameters
-        if tol is None:
-            raise ValueError("tol must be provided")
-        
-        try:
-            tol = float(tol)
-        except (ValueError, TypeError) as e:
-            raise TypeError("tol must be numeric") from e
-        
-        if tol <= 0:
-            raise ValueError(f"tol must be positive, got {tol}")
-        if tol > 1:
-            warnings.warn(f"Tolerance is unusually large: {tol}")
-        if np.isnan(tol) or np.isinf(tol):
-            raise ValueError("tol is NaN or infinite")
-        
-        if max_iter is None:
-            raise ValueError("max_iter must be provided")
-        
-        if not isinstance(max_iter, (int, np.integer)):
-            raise TypeError(f"max_iter must be an integer, got {type(max_iter).__name__}")
-        
-        if max_iter < 1:
-            raise ValueError(f"max_iter must be positive, got {max_iter}")
-        if max_iter > MAX_ITERATIONS:
-            raise ValueError(f"max_iter is too large (max {MAX_ITERATIONS}), got {max_iter}")
+        tol = validate_tolerance(tol, "tol")
+        max_iter = validate_positive_integer(max_iter, "max_iter", max_val=MAX_ITERATIONS)
         
         # Initialize
         x = np.linspace(self.xstart, self.xend, self.N + 1)
@@ -369,15 +304,13 @@ class FDM_Solver:
             except Exception as e:
                 raise RuntimeError(f"Error solving linear system at iteration {k+1}: {e}") from e
             
-            # Check for NaN or Inf in delta
-            if np.any(np.isnan(delta)) or np.any(np.isinf(delta)):
-                raise RuntimeError(f"Solution update contains NaN or Inf at iteration {k+1}")
+            # Validate delta
+            delta = validate_nan_inf(delta, f"delta_iter_{k+1}")
             
             w += delta
             
-            # Check for NaN or Inf in solution
-            if np.any(np.isnan(w)) or np.any(np.isinf(w)):
-                raise RuntimeError(f"Solution contains NaN or Inf at iteration {k+1}")
+            # Validate w
+            w = validate_nan_inf(w, f"w_iter_{k+1}")
 
             try:
                 norm_delta = self.Norm_inf(delta)

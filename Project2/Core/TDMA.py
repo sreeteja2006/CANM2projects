@@ -14,55 +14,20 @@ def TDMA(u, l, d, b):
     Returns:
     x: solution vector (length n)
     """
-    # Input validation
-    if u is None or l is None or d is None or b is None:
-        raise ValueError("All input parameters (u, l, d, b) must be provided")
-    
-    # Convert to numpy arrays if needed
-    try:
-        u = np.asarray(u, dtype=float)
-        l = np.asarray(l, dtype=float)
-        d = np.asarray(d, dtype=float)
-        b = np.asarray(b, dtype=float)
-    except (ValueError, TypeError) as e:
-        raise TypeError("All inputs must be convertible to numeric arrays") from e
-    
-    # Check dimensions
-    if d.ndim != 1 or b.ndim != 1:
-        raise ValueError("Diagonal d and vector b must be 1-dimensional arrays")
+    # Convert to numpy arrays
+    u = np.asarray(u, dtype=float)
+    l = np.asarray(l, dtype=float)
+    d = np.asarray(d, dtype=float)
+    b = np.asarray(b, dtype=float)
     
     n = len(d)
-    
-    # Check for minimum size
-    if n < 2:
-        raise ValueError("Matrix size must be at least 2x2")
-    
-    # Check array lengths
-    if len(b) != n:
-        raise ValueError(f"Length mismatch: d has length {n} but b has length {len(b)}")
-    
-    if len(u) != n - 1:
-        raise ValueError(f"Upper diagonal u must have length {n-1}, got {len(u)}")
-    
-    if len(l) != n - 1:
-        raise ValueError(f"Lower diagonal l must have length {n-1}, got {len(l)}")
-    
-    # Check for NaN or Inf values
-    if np.any(np.isnan(u)) or np.any(np.isnan(l)) or np.any(np.isnan(d)) or np.any(np.isnan(b)):
-        raise ValueError("Input arrays contain NaN values")
-    
-    if np.any(np.isinf(u)) or np.any(np.isinf(l)) or np.any(np.isinf(d)) or np.any(np.isinf(b)):
-        raise ValueError("Input arrays contain infinite values")
-    
-    # Initialize arrays
     Q = np.zeros(n)
     P = np.zeros(n - 1)
     
-    # Check for zero diagonal at first position
-    if abs(d[0]) < ZERO_TOLERANCE:
-        raise ValueError("Division by zero: diagonal element d[0] is zero or near-zero")
-    
     # Forward elimination
+    if abs(d[0]) < ZERO_TOLERANCE:
+        raise ValueError(f"Matrix is singular: d[0]={d[0]}")
+    
     Q[0] = b[0] / d[0]
     P[0] = u[0] / d[0]
     
@@ -91,9 +56,5 @@ def TDMA(u, l, d, b):
     
     for i in range(n - 2, -1, -1):
         x[i] = Q[i] - P[i] * x[i + 1]
-    
-    # Check for NaN or Inf in solution
-    if np.any(np.isnan(x)) or np.any(np.isinf(x)):
-        raise RuntimeError("Solution contains NaN or infinite values. Matrix may be ill-conditioned")
     
     return x
