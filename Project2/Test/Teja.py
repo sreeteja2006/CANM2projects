@@ -17,7 +17,6 @@ BC = np.array([
 ])
 
 
-
 stability = StabilitySolver(F=F, Fy=Fy, Fyp=Fyp, N=N, domain=domain, BC=BC, w0=None)
 
 w, iterations, cond = stability.solve(tol=1e-10, max_iter=50, verbose=True)
