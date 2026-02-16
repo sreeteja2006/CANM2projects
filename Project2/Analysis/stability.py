@@ -38,7 +38,6 @@ class StabilitySolver:
             self.w = np.array(w0)
 
 
-
     @staticmethod
     def build_full_tridiag(d, l, u):
         n = len(d)
@@ -47,7 +46,6 @@ class StabilitySolver:
         J[np.arange(1, n), np.arange(n - 1)] = l
         J[np.arange(n - 1), np.arange(1, n)] = u
         return J
-
 
     @staticmethod
     def diag_dom_metrics(d, l, u):
