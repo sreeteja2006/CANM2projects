@@ -332,5 +332,17 @@ class FDM_Solver:
                   f"Final residual norm: {norm_delta:.2e}")
 
         return w
-
+    def set_N(self, new_N):
+        """
+        Update the number of grid intervals and recompute related parameters.
+        
+        Parameters:
+        new_N: New number of grid intervals
+        """
+        new_N = validate_positive_integer(new_N, "new_N", min_val=2, max_val=MAX_GRID_SIZE)
+        self.N = new_N
+        self.h = (self.xend - self.xstart) / self.N
+        
+        # Update initial guess to match new grid size
+        self.w0 = np.linspace(self.xstart, self.xend, self.N + 1)
     

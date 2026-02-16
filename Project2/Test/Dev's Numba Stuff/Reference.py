@@ -35,8 +35,8 @@ import numpy as np
 from numba import njit
 import matplotlib.pyplot as plt
 import time
-from tqdm import tqdm
 from pathlib import Path
+
 
 # ensure output plots go into Project2/Plots regardless of where this script is run
 PLOTS_DIR = Path(__file__).parent.parent.parent / "Plots"
@@ -49,7 +49,7 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 # Domain parameters
 X_START = 0.0
 X_END = 1.0
-N = 2**27  # number of interior grid points
+N = 2**25  # number of interior grid points
 
 # Boundary conditions (Dirichlet: y(x0) = c0, y(x1) = c1)
 BC_LEFT_VALUE = 0.0      # y(0) = 0
@@ -76,8 +76,8 @@ def Fy(x, y, yp):
     From F = -(y')^2 / (y + 1e-4)
     dF/dy = (y')^2 / (y + 1e-4)^2
     """
-    temp = y + 1e-4
-    return (yp**2) / (temp * temp)
+    delta = 1e-9 * max(1.0, abs(y))  # relative perturbation
+    return (F(x, y+delta, yp) - F(x, y-delta, yp)) / (2.0 * delta)
 
 
 @njit
@@ -87,13 +87,14 @@ def Fyp(x, y, yp):
     From F = -(y')^2 / (y + 1e-4)
     dF/dy' = -2*y' / (y + 1e-4)
     """
-    return -2.0 * yp / (y + 1e-4)
+    delta = 1e-9 * max(1.0, abs(yp))  # relative perturbation
+    return (F(x, y, yp+delta) - F(x, y, yp-delta)) / (2.0 * delta)
 
 
 @njit
 def analytical_solution(x):
     """Analytical solution for error checking"""
-    return 1e-4 * (np.sqrt(100020000 * x + 1) - 1)
+    return 1e-4*(np.sqrt(100020000* x + 1) - 1)
 
 
 # =============================================================================
@@ -254,6 +255,7 @@ def newton_solve_jit(w0, x, h, tol=1e-8, max_iter=100):
     
     for iteration in range(max_iter):
         # Build residual and Jacobian
+        # print(iteration)
         r = build_residual(w, x, h, F, Fy, Fyp)
         u, l, d = build_jacobian(w, x, h, Fy, Fyp)
         
@@ -262,7 +264,6 @@ def newton_solve_jit(w0, x, h, tol=1e-8, max_iter=100):
         
         # Update solution
         w = w + delta
-        
         # Check convergence
         error = np.max(np.abs(delta))
         if error < tol:
@@ -271,43 +272,7 @@ def newton_solve_jit(w0, x, h, tol=1e-8, max_iter=100):
     return w, max_iter
 
 
-def newton_solve(w0, x, h, tol=1e-8, max_iter=100, show_progress=True):
-    """
-    Newton's method with progress bar (wrapper around jitted version)
-    
-    w0: initial guess
-    x: grid points
-    h: grid spacing
-    tol: convergence tolerance
-    max_iter: max iterations
-    show_progress: if True, display tqdm progress bar
-    """
-    if show_progress:
-        print("Running Newton solver with progress tracking...")
-    
-    # Manual iteration loop to show progress with tqdm
-    w = w0.copy()
-    with tqdm(total=max_iter, disable=not show_progress, desc="Newton iterations") as pbar:
-        for iteration in range(max_iter):
-            # Build residual and Jacobian
-            r = build_residual(w, x, h, F, Fy, Fyp)
-            u, l, d = build_jacobian(w, x, h, Fy, Fyp)
-            
-            # Solve J * delta = -r for delta
-            delta = TDMA_solver(u, l, d, -r)
-            
-            # Update solution
-            w = w + delta
-            
-            # Check convergence
-            error = np.max(np.abs(delta))
-            pbar.update(1)
-            pbar.set_postfix({"error": f"{error:.2e}"})
-            
-            if error < tol:
-                return w, iteration + 1
-    
-    return w, max_iter
+
 
 
 # =============================================================================
@@ -331,45 +296,33 @@ def compute_error(w, x):
 # =============================================================================
 
 if __name__ == "__main__":
-    print("\n" + "="*70)
-    print("FDM Solver with Numba @njit - BVP: y'' = -(y')^2 / (y + 1e-4)")
-    print("="*70)
+    print("FDM Solver with Numba @njit to reduce runtime - BVP: y'' = -(y')^2 / (y + 1e-4)")
     
     # Setup grid
     x = np.linspace(X_START, X_END, N + 1)
     h = (X_END - X_START) / N
     
-    print(f"\nGrid Configuration:")
-    print(f"  Domain: [{X_START}, {X_END}]")
-    print(f"  Number of points: {N + 1}")
-    print(f"  Grid spacing: {h:.8e}")
-    print(f"  BC: y({X_START}) = {BC_LEFT_VALUE}, y({X_END}) = {BC_RIGHT_VALUE}")
+    # print(f"\nGrid Configuration:")
+    # print(f"  Domain: [{X_START}, {X_END}]")
+    # print(f"  Number of points: {N + 1}")
+    # print(f"  Grid spacing: {h:.8e}")
+    # print(f"  BC: y({X_START}) = {BC_LEFT_VALUE}, y({X_END}) = {BC_RIGHT_VALUE}")
     
     # Initial guess (linear interpolation between BCs)
     w0 = np.linspace(BC_LEFT_VALUE, BC_RIGHT_VALUE, N + 1)
     
-    print(f"\nSolver Configuration:")
-    print(f"  Method: Newton with Numba @njit acceleration")
-    print(f"  Tolerance: 1e-8")
-    print(f"  Max iterations: 100")
+    # print(f"\nSolver Configuration:")
+    # print(f"  Method: Newton with Numba @njit acceleration")
+    # print(f"  Tolerance: 1e-8")
+    # print(f"  Max iterations: 100")
     
     # First call compiles the jitted functions (warmup)
-    print(f"\nCompiling with Numba (first call)...")
-    t0 = time.time()
-    w_solution, n_iters = newton_solve(w0, x, h, show_progress=False)
-    compile_time = time.time() - t0
+    # print(f"\nCompiling with Numba (first call)...")
+    # t0 = time.time()
+    w_solution, n_iters = newton_solve_jit(w0, x, h)
+    # compile_time = time.time() - t0
     
-    print(f"  Compilation + Solve: {compile_time:.4f} seconds")
-    print(f"  Converged in {n_iters} iterations")
-    
-    # Second call measures actual performance (no compilation overhead)
-    print(f"\nSolving again (no compilation overhead)...")
-    w0_fresh = np.linspace(BC_LEFT_VALUE, BC_RIGHT_VALUE, N + 1)
-    t0 = time.time()
-    w_solution, n_iters = newton_solve(w0_fresh, x, h, show_progress=True)
-    solve_time = time.time() - t0
-    
-    print(f"  Pure compute time: {solve_time:.4f} seconds")
+    # print(f"  Compilation + Solve: {compile_time:.4f} seconds")
     print(f"  Converged in {n_iters} iterations")
     
     # Error analysis
@@ -377,66 +330,25 @@ if __name__ == "__main__":
     max_error = compute_error(w_solution, x)
     print(f"  Max absolute error: {max_error:.8e}")
     
-    # Print sample values
-    print(f"\nSample Solution Values:")
-    indices = [0, N//4, N//2, 3*N//4, N]
-    for idx in indices:
-        exact = analytical_solution(x[idx])
-        print(f"  x={x[idx]:.4f}: numerical={w_solution[idx]:.8f}, " +
-              f"exact={exact:.8f}, error={abs(w_solution[idx] - exact):.2e}")
-    
     # Plotting
-    plt.figure(figsize=(12, 5))
-    
-    # Numerical solution
-    plt.subplot(1, 2, 1)
-    plt.plot(x, w_solution, 'b-', label='Numerical (FDM + Numba)')
-    x_fine = np.linspace(X_START, X_END, 1000)
-    y_fine = analytical_solution(x_fine)
-    plt.plot(x_fine, y_fine, 'r--', label='Analytical', linewidth=2, alpha=0.7)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('Solution')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    
-    # Error
-    plt.subplot(1, 2, 2)
+    plt.figure(figsize=(10, 5))
     errors = np.abs(w_solution - analytical_solution(x))
     plt.semilogy(x, errors, 'g-', linewidth=2)
     plt.xlabel('x')
-    plt.ylabel('Absolute Error')
-    plt.title('Error vs Analytical Solution')
+    plt.ylabel('Reference Error')
+    plt.title('Reference Solution Absolute Error (log scale)')
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
     # save into Project2 Plots folder
-    save_path = PLOTS_DIR / 'fdm_njit_solution.png'
+    save_path = PLOTS_DIR / 'Reference_Solution_Error.png'
     plt.savefig(save_path, dpi=150)
     print(f"\nPlot saved to: {save_path}")
     plt.show()
     
-    print("\n" + "="*70)
-    print("PERFORMANCE NOTES:")
-    print("="*70)
-    print("""
-The @njit decorator creates compiled machine code (CPU JIT) which gives:
-  - ~10-100x speedup vs pure Python (N=8192 typically ~0.01-0.1s)
-  - First call is slower due to compilation overhead
-  - Subsequent calls run at compiled speed
-
-For EVEN FASTER execution with large N (100k+ points), consider:
-  1. Use @cuda.jit for GPU acceleration (requires NVIDIA GPU + CUDA)
-  2. Use parallel=True in @njit (multi-threaded CPU)
-  3. Adjust problem: larger h or smaller N
-  
-GPU Code Template (requires: pip install numba[cuda]):
-  from numba import cuda
-  
-  @cuda.jit
-  def my_kernel(array):
-      idx = cuda.grid(1)
-      if idx < array.size:
-          array[idx] *= 2
-    """)
-    print("="*70)
+    # Save final solution vector to Analysis folder
+    ANALYSIS_DIR = Path(__file__).parent.parent.parent / "Analysis"
+    ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
+    solution_file = ANALYSIS_DIR / 'y_ref.txt'
+    np.savetxt(solution_file, w_solution[::2**10])  # save every 1024th point to reduce file size
+    print(f"Solution vector saved to: {solution_file}")
