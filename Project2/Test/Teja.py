@@ -1,4 +1,4 @@
-from Project2.Analysis.stability import StabilitySolver
+from Analysis.stability import StabilitySolver
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -53,5 +53,3 @@ w,iterations = stability.solve(tol=1e-10, max_iter=50, verbose=True)
 
 print("Final solution w:", w)
 print(f"Converged in {iterations} iterations")
-plt.plot(np.linspace(domain5[0], domain5[1], N + 1), w, label='Numerical Solution')
-plt.savefig("plot.png", dpi=200, bbox_inches="tight")
