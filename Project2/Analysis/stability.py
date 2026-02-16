@@ -7,6 +7,7 @@ from Core.Boundary_Conditions import Boundary_Conditions
 
 
 class StabilitySolver:
+
     def __init__(self, F, Fy, Fyp, N, domain, BC, w0=None):
 
         self.F = F
@@ -72,7 +73,6 @@ class StabilitySolver:
 
         return {"dd_ok": ok, "dd_min_ratio": float(min_ratio)}
 
-
     @staticmethod
     def infnorm_tridiag(d, l, u):
         n = len(d)
@@ -85,7 +85,6 @@ class StabilitySolver:
                 s += abs(u[i])
             max_sum = max(max_sum, s)
         return float(max_sum)
-
 
     @staticmethod
     def inv_amplification_estimate(d, l, u, trials=10, seed=0):
@@ -113,7 +112,6 @@ class StabilitySolver:
         cond2 = float("inf") if smin == 0 else smax / smin
         return {"sigma_min": smin, "cond2": cond2}
 
-
     @staticmethod
     def newton_order_indicators(res_hist):
         r = np.array(res_hist)
@@ -135,40 +133,56 @@ class StabilitySolver:
         w = self.w.copy()
         x = self.x
 
-        res_hist = []
+        # history storage
+        hist = {
+            "res_inf": [],
+            "res_2": [],
+            "sigma_min": [],
+            "cond2": [],
+            "inv_amp_max": [],
+            "dd_ok": []
+        }
 
         for k in range(max_iter):
 
             u, l, d = jacobian.build(w, x)
             F = residual.build(w, x)
 
-            res_norm = np.linalg.norm(F, 2)
-            res_hist.append(res_norm)
+            res_inf = np.linalg.norm(F, np.inf)
+            res_2 = np.linalg.norm(F, 2)
+
+            hist["res_inf"].append(res_inf)
+            hist["res_2"].append(res_2)
 
             dd = self.diag_dom_metrics(d, l, u)
-            inv_amp = self.inv_amplification_estimate(d, l, u)
+            hist["dd_ok"].append(dd["dd_ok"])
+
+            inv_amp = self.inv_amplification_estimate(d, l, u, seed=k)
+            hist["inv_amp_max"].append(inv_amp["inv_amp_max"])
 
             J_full = self.build_full_tridiag(d, l, u)
             svd_metrics = self.sigma_min_and_cond2(J_full)
 
-            delta = TDMA(u.copy(), l.copy(), d.copy(), -F)
+            hist["sigma_min"].append(svd_metrics["sigma_min"])
+            hist["cond2"].append(svd_metrics["cond2"])
 
+            delta = TDMA(u.copy(), l.copy(), d.copy(), -F)
             step_norm = np.linalg.norm(delta, np.inf)
 
             if verbose:
-                print(f"Iter {k}: ||F||={res_norm:.3e}")
+                print(f"Iter {k}: ||F||={res_2:.3e}")
                 print(f"  Diag Dominant: {dd['dd_ok']}")
-                print(f"  inv_amp_max: {inv_amp['inv_amp_max']:.3e}")
                 print(f"  sigma_min: {svd_metrics['sigma_min']:.3e}")
                 print(f"  cond2: {svd_metrics['cond2']:.3e}")
+                print(f"  inv_amp_max: {inv_amp['inv_amp_max']:.3e}")
 
             w += delta
 
             if step_norm < tol:
                 if verbose:
                     print(f"Converged in {k+1} iterations")
-                    print(self.newton_order_indicators(res_hist))
-                return w, k + 1
+                    print(self.newton_order_indicators(hist["res_2"]))
+                return w, k + 1, hist
 
         print("Did not converge")
-        return w, max_iter
+        return w, max_iter, hist
