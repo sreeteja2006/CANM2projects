@@ -28,7 +28,7 @@ x = np.linspace(domain[0], domain[1], N+1)
 plt.figure(figsize=(10, 6))
 
 # 2. Plot Numerical Solution (Always runs)
-# plt.plot(x, solution, label='Numerical (FDM)',marker = 'x' ,linestyle='--', color='blue')
+plt.plot(x, solution, label='Numerical (FDM)',marker = 'x' ,linestyle='--', color='blue')
 
 # 3. Plot Analytical Solution (Only runs if available)
 if analytical_solution:
@@ -37,14 +37,14 @@ if analytical_solution:
         print("Analytical Solution:", analytical_values)
         print("Max Error:", np.max(np.abs(analytical_values - solution)))
         
-        plt.plot(x, analytical_values, label='Analytical', alpha=1, color='orange')
+        plt.plot(x, analytical_values, label='Analytical', alpha=0.8, color='orange')
     except Exception as e:
         print(f"Warning: Could not evaluate analytical solution: {e}")
 
 # 4. Finalize Plot
 plt.xlabel('x')
 plt.ylabel('y')
-plt.title(f'Analytical Solution')
+plt.title(f'Numerical vs Analytical Solution (N={N})')
 plt.legend()
 plt.grid(True)
 plt.show()
