@@ -34,7 +34,7 @@ class analysis:
         method_names = ['RK2', 'RK4', 'ABM2', 'ABM4']
 
 
-results = {}
+        results = {}
         for method, name in zip(methods, method_names):
             self.solver.set_method(method)
 
