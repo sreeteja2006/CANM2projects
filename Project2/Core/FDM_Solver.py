@@ -2,13 +2,8 @@ import numpy as np
 from typing import Callable
 import warnings
 
-from .constants import (ZERO_TOLERANCE, DERIVATIVE_EPSILON, MIN_DERIVATIVE_EPSILON,
-                        MAX_GRID_SIZE, MAX_ITERATIONS, DERIVATIVE_VALIDATION_REL_TOL,
-                        DERIVATIVE_VALIDATION_ABS_TOL)
-from .validation import (validate_not_none, validate_callable, validate_positive_integer,
-                          validate_array_conversion, validate_1d_array, validate_nan_inf,
-                          validate_array_length, validate_tolerance, validate_finite_value,
-                          validate_bc_coefficients, validate_in_range)
+from .constants import *
+from .validation import *
 from .Jacobian import Jacobian
 from .Boundary_Conditions import Boundary_Conditions
 from .TDMA import TDMA
@@ -16,22 +11,34 @@ from .Function_Generator import Function_Generator
 from .Residual import Residual
 
 class FDM_Solver:
-    def __init__(self, F, Fy, Fyp, N, domain, BC, w0=None):
+    def __init__(self, N, domain, F=None, Fy=None, Fyp=None, BC=None, w0=None, jacobian=None, residual=None):
         """
         Initialize Finite Difference Method Solver.
 
         Args:
-            F (callable): y'' = F(x,y,y') in FDM
-            Fy (callable): partial derivative of F wrt y (None for auto-approximation)
-            Fyp (callable): partial derivative of F wrt y' (None for auto-approximation)
-            N (int): Number of grid intervals
-            domain (Tuple): Domain (start, end)
-            BC (Array): Array of BC in a 2*3 matrix of the form ay + by' + c = 0
+            N (int): Number of grid intervals (required)
+            domain (Tuple): Domain (start, end) (required)
+            F (callable, optional): y'' = F(x,y,y') in FDM. Required if jacobian or residual not provided.
+            Fy (callable, optional): partial derivative of F wrt y (None for auto-approximation)
+            Fyp (callable, optional): partial derivative of F wrt y' (None for auto-approximation)
+            BC (Array, optional): Array of BC in a 2*3 matrix of the form ay + by' + c = 0
             w0 (Vector, optional): Initial guess vector. Defaults to None.
+            jacobian (Jacobian, optional): Custom Jacobian object. Defaults to None.
+            residual (Residual, optional): Custom Residual object. Defaults to None.
         """
-        # Validate F
-        F = validate_not_none(F, "F")
-        F = validate_callable(F, "F")
+        # Validate required parameter combinations
+        if jacobian is not None and residual is not None:
+            # Custom jacobian and residual provided - F is optional
+            if F is None:
+                print("Note: Using custom Jacobian and Residual. F not required.\n")
+        else:
+            # Standard mode - F is required
+            if F is None:
+                raise ValueError("F must be provided unless both jacobian and residual are specified.")
+        
+        # Validate F if provided
+        if F is not None:
+            F = validate_callable(F, "F")
         
         # Validate Fy and Fyp (can be None or callable)
         if Fy is not None:
@@ -43,14 +50,14 @@ class FDM_Solver:
         N = validate_positive_integer(N, "N", min_val=2, max_val=MAX_GRID_SIZE)
         
         # Validate domain
-        domain = validate_not_none(domain, "domain")
         xstart, xend = validate_finite_value(domain[0], "domain_start"), validate_finite_value(domain[1], "domain_end")
         
         if xstart >= xend:
             raise ValueError(f"domain start must be less than end: [{xstart}, {xend}]")
         
-        # Validate BC
-        BC = validate_bc_coefficients(BC)
+        # Validate BC if provided 
+        if BC is not None:
+            BC = validate_bc_coefficients(BC)
         
         # Store validated parameters
         self.F = F
@@ -60,49 +67,59 @@ class FDM_Solver:
         self.h = (self.xend - self.xstart) / N
         self.BC = BC
         
-        # Validate and set partial derivatives with validation
-        self._user_provided_Fy = Fy
-        self._user_provided_Fyp = Fyp
-        
-        if Fy is None:
-            print("Note: Fy not provided, using numerical approximation.")
-            self.Fy = self._approx_Fy
-        else:
-            # Validate user-provided Fy
-            is_valid, message = self._validate_partial_derivative(Fy, 'Fy')
-            if is_valid:
-                self.Fy = Fy
-            else:
-                warnings.warn(f"User-provided Fy validation failed: {message}\\nSwitching to numerical approximation.")
-                print(f"WARNING: User-provided Fy appears incorrect: {message}")
-                print("Switching to numerical approximation for Fy.")
+        if F is not None:
+            # Standard mode: handle partial derivatives
+            if Fy is None:
+                print("Note: Fy not provided, using numerical approximation.\n")
                 self.Fy = self._approx_Fy
-
-        if Fyp is None:
-            print("Note: Fyp not provided, using numerical approximation.")
-            self.Fyp = self._approx_Fyp
-        else:
-            # Validate user-provided Fyp
-            is_valid, message = self._validate_partial_derivative(Fyp, 'Fyp')
-            if is_valid:
-                self.Fyp = Fyp
             else:
-                warnings.warn(f"User-provided Fyp validation failed: {message}\\nSwitching to numerical approximation.")
-                print(f"WARNING: User-provided Fyp appears incorrect: {message}")
-                print("Switching to numerical approximation for Fyp.")
+                # Validate user-provided Fy
+                is_valid, message = self._validate_partial_derivative(Fy, 'Fy')
+                if is_valid:
+                    self.Fy = Fy
+                else:
+                    warnings.warn(f"User-provided Fy validation failed: {message}\\nSwitching to numerical approximation.\n")
+                    self.Fy = self._approx_Fy
+
+            if Fyp is None:
+                print("Note: Fyp not provided, using numerical approximation.\n")
                 self.Fyp = self._approx_Fyp
-        
-        # Initialize boundary conditions
-        self.Boundary_Conditions = Boundary_Conditions(BC)
-        self.left_bc_jac = self.Boundary_Conditions.build_left_bc_jac(self.Fy, self.Fyp, self.xstart)
-        self.right_bc_jac = self.Boundary_Conditions.build_right_bc_jac(self.Fy, self.Fyp, self.xend)
-        self.left_bc_res = self.Boundary_Conditions.build_left_bc_res(self.F, self.xstart)
-        self.right_bc_res = self.Boundary_Conditions.build_right_bc_res(self.F, self.xend)
-        
-        # Initialize function generator
-        self.Function_Generator = Function_Generator(F, self.Fy, self.Fyp)
-        self.fu, self.fl, self.fd = self.Function_Generator.build_tridiagonal_terms()
-        self.Residual_F = self.Function_Generator.build_residual_function()
+            else:
+                # Validate user-provided Fyp
+                is_valid, message = self._validate_partial_derivative(Fyp, 'Fyp')
+                if is_valid:
+                    self.Fyp = Fyp
+                else:
+                    warnings.warn(f"User-provided Fyp validation failed: {message}\\nSwitching to numerical approximation.")
+                    self.Fyp = self._approx_Fyp
+            
+            # Initialize boundary conditions
+            if BC is None:
+                raise ValueError("BC must be provided when F is specified.")
+            self.Boundary_Conditions = Boundary_Conditions(BC)
+            self.left_bc_jac = self.Boundary_Conditions.build_left_bc_jac(self.Fy, self.Fyp, self.xstart)
+            self.right_bc_jac = self.Boundary_Conditions.build_right_bc_jac(self.Fy, self.Fyp, self.xend)
+            self.left_bc_res = self.Boundary_Conditions.build_left_bc_res(self.F, self.xstart)
+            self.right_bc_res = self.Boundary_Conditions.build_right_bc_res(self.F, self.xend)
+            
+            # Initialize function generator
+            self.Function_Generator = Function_Generator(F, self.Fy, self.Fyp)
+            self.fu, self.fl, self.fd = self.Function_Generator.build_tridiagonal_terms()
+            self.Residual_F = self.Function_Generator.build_residual_function()
+        else:
+            #F not provided, set placeholders
+            self.Fy = None
+            self.Fyp = None
+            self.Boundary_Conditions = None
+            self.left_bc_jac = None
+            self.right_bc_jac = None
+            self.left_bc_res = None
+            self.right_bc_res = None
+            self.Function_Generator = None
+            self.fu = None
+            self.fl = None
+            self.fd = None
+            self.Residual_F = None
 
         # Set initial guess
         if w0 is None:
@@ -113,6 +130,32 @@ class FDM_Solver:
             w0 = validate_array_length(w0, self.N + 1, "w0")
             w0 = validate_nan_inf(w0, "w0")
             self.w0 = w0
+        
+        # Store custom jacobian and residual or initialize default ones
+        if jacobian is not None:
+            self.jacobian = jacobian
+        else:
+            if F is None:
+                raise ValueError("Jacobian must be provided when F is not specified.")
+            self.jacobian = Jacobian(
+                fu=self.fu,
+                fl=self.fl,
+                fd=self.fd,
+                bc_left_jac=self.left_bc_jac,
+                bc_right_jac=self.right_bc_jac
+            )
+        
+        if residual is not None:
+            self.residual = residual
+        else:
+            if F is None:
+                raise ValueError("Residual must be provided when F is not specified.")
+            self.residual = Residual(
+                self.Residual_F,
+                self.N,
+                self.left_bc_res,
+                self.right_bc_res
+            )
     
     def _validate_partial_derivative(self, user_func, func_name):
         """
@@ -187,6 +230,10 @@ class FDM_Solver:
         Returns:
         Approximate value of ∂F/∂y
         """
+        if self.F is None:
+            raise RuntimeError("Cannot compute Fy approximation: F is not defined. "
+                             "Provide F or use custom Jacobian.")
+        
         eps = DERIVATIVE_EPSILON * max(1.0, abs(y))
         if eps < MIN_DERIVATIVE_EPSILON:
             eps = DERIVATIVE_EPSILON
@@ -214,6 +261,10 @@ class FDM_Solver:
         Returns:
         Approximate value of ∂F/∂y'
         """
+        if self.F is None:
+            raise RuntimeError("Cannot compute Fyp approximation: F is not defined. "
+                             "Provide F or use custom Jacobian.")
+        
         eps = DERIVATIVE_EPSILON * max(1.0, abs(yp))
         if eps < MIN_DERIVATIVE_EPSILON:
             eps = DERIVATIVE_EPSILON
@@ -271,31 +322,16 @@ class FDM_Solver:
         x = np.linspace(self.xstart, self.xend, self.N + 1)
         w = self.w0.copy()
 
-        residual = Residual(
-            self.Residual_F,
-            self.N,
-            self.left_bc_res,
-            self.right_bc_res
-        )
-
-        jacobian = Jacobian(
-            fu=self.fu,
-            fl=self.fl,
-            fd=self.fd,
-            bc_left_jac=self.left_bc_jac,
-            bc_right_jac=self.right_bc_jac
-        )
-
         converged = False
         
         for k in range(max_iter):
             try:
-                u, l, d = jacobian.build(w, x)
+                u, l, d = self.jacobian.build(w, x)
             except Exception as e:
                 raise RuntimeError(f"Error building Jacobian at iteration {k+1}: {e}") from e
             
             try:
-                b = residual.build(w, x)
+                b = self.residual.build(w, x)
             except Exception as e:
                 raise RuntimeError(f"Error building residual at iteration {k+1}: {e}") from e
 
@@ -321,7 +357,7 @@ class FDM_Solver:
                 raise RuntimeError(f"Solution diverged at iteration {k+1} (infinite norm)")
             
             if norm_delta < tol:
-                print(f"Converged in {k+1} iterations (residual norm: {norm_delta:.2e})")
+                print(f"Converged in {k+1} iterations (residual norm: {norm_delta:.2e})\n")
                 converged = True
                 break
         
@@ -329,9 +365,11 @@ class FDM_Solver:
             warnings.warn(f"Maximum iterations ({max_iter}) reached without convergence. "
                         f"Final residual norm: {norm_delta:.2e}")
             print(f"WARNING: Did not converge in {max_iter} iterations. "
-                  f"Final residual norm: {norm_delta:.2e}")
+                  f"Final residual norm: {norm_delta:.2e}\n")
 
         return w
+    
+
     def set_N(self, new_N):
         """
         Update the number of grid intervals and recompute related parameters.

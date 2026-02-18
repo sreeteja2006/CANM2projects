@@ -1,6 +1,12 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+import os
+
+# Add parent directory to path to import Core
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from Core.FDM_Solver import FDM_Solver
 from Core.Loader import load_config
 
@@ -8,14 +14,14 @@ from Core.Loader import load_config
 
 config_path = 'config.json'
 try:
-    N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter,_ = load_config(config_path)
+    N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter, compute_error = load_config(config_path)
     print(f"Successfully loaded configuration from {config_path}")
 except FileNotFoundError:
     print(f"Error: Could not find {config_path}")
     exit()
 
 # Initialize Solver
-solver = FDM_Solver(F, Fy, Fyp, N, domain, BC)
+solver = FDM_Solver(N, domain, F=F, Fy=Fy, Fyp=Fyp, BC=BC)
 solution = solver.solver(tol=tol, max_iter=max_iter)
 
 print("Numerical Solution:", solution)
