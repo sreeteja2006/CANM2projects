@@ -1,9 +1,9 @@
 import numpy as np
-from Core.TDMA import TDMA
-from Core.Residual import Residual
-from Core.Jacobian import Jacobian
-from Core.Function_Generator import Function_Generator
-from Core.Boundary_Conditions import Boundary_Conditions
+from core.TDMA import TDMA
+from core.Residual import Residual
+from core.Jacobian import Jacobian
+from core.Function_Generator import Function_Generator
+from core.Boundary_Conditions import Boundary_Conditions
 
 
 class StabilitySolver:

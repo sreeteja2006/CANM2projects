@@ -3,12 +3,12 @@ import numpy as np
 from numba import njit
 import matplotlib.pyplot as plt
 # from Core.FDM_Solver import FDM_Solver
-from Core.Loader import load_config
-from Core.FDM_Solver import FDM_Solver
+from core.Loader import load_config
+from core.FDM_Solver import FDM_Solver
 
 # --- Main Execution ---
 
-config_path = 'config.json'
+config_path = 'configs/config.json'
 try:
     N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter, error = load_config(config_path)
     print(f"Successfully loaded configuration from {config_path}")

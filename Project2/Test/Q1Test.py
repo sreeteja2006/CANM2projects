@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Core.FDM_Solver import FDM_Solver
-from Core.Jacobian import Jacobian
-from Core.Boundary_Conditions import Boundary_Conditions
-from Core.Function_Generator import Function_Generator
-from Core.Residual import Residual
-from Core.TDMA import TDMA
+from core.FDM_Solver import FDM_Solver
+from core.Jacobian import Jacobian
+from core.Boundary_Conditions import Boundary_Conditions
+from core.Function_Generator import Function_Generator
+from core.Residual import Residual
+from core.TDMA import TDMA
 
 xstart = 0
 xend = 1
