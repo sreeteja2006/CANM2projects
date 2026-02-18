@@ -112,14 +112,14 @@ class StabilitySolver:
         cond2 = float("inf") if smin == 0 else smax / smin
         return {"sigma_min": smin, "cond2": cond2}
 
-    @staticmethod
-    def newton_order_indicators(res_hist):
-        r = np.array(res_hist)
-        if len(r) < 3:
-            return {"lin_last": np.nan, "quad_last": np.nan}
-        lin = r[-1] / r[-2] if r[-2] != 0 else np.inf
-        quad = r[-1] / (r[-2] ** 2) if r[-2] != 0 else np.inf
-        return {"lin_last": float(lin), "quad_last": float(quad)}
+    # @staticmethod
+    # def newton_order_indicators(res_hist):
+    #     r = np.array(res_hist)
+    #     if len(r) < 3:
+    #         return {"lin_last": np.nan, "quad_last": np.nan}
+    #     lin = r[-1] / r[-2] if r[-2] != 0 else np.inf
+    #     quad = r[-1] / (r[-2] ** 2) if r[-2] != 0 else np.inf
+    #     return {"lin_last": float(lin), "quad_last": float(quad)}
 
 
     def solve(self, tol=1e-10, max_iter=50, verbose=True):
@@ -181,7 +181,7 @@ class StabilitySolver:
             if step_norm < tol:
                 if verbose:
                     print(f"Converged in {k+1} iterations")
-                    print(self.newton_order_indicators(hist["res_2"]))
+                    # print(self.newton_order_indicators(hist["res_2"]))
                 return w, k + 1, hist
 
         print("Did not converge")
