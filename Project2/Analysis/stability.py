@@ -175,3 +175,44 @@ class StabilitySolver:
 
         print("Did not converge")
         return w, max_iter, hist
+    def plot_convergence(self, hist):
+        import matplotlib.pyplot as plt
+
+        fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+
+        ax1 = axs[0, 0]
+
+        ax1.semilogy(hist["res_inf"], label="Inf Norm")
+        ax1.semilogy(hist["res_2"], label="2 Norm")
+        ax1.set_title("Residual Norms")
+        ax1.set_xlabel("Iteration")
+        ax1.set_ylabel("Norm")
+        ax1.legend()
+        ax1.grid()
+
+        ax2=axs[0, 1]
+        ax2.plot(hist["sigma_min"], label="Sigma Min")
+        ax2.set_title("Minimum Singular Value")
+        ax2.set_xlabel("Iteration")
+        ax2.set_ylabel("Sigma Min")
+        ax2.legend()
+        ax2.grid()
+
+        ax3 = axs[1, 0]
+        ax3.plot(hist["cond2"], label="Condition Number (2-norm)")
+        ax3.set_title("Condition Number")
+        ax3.set_xlabel("Iteration")
+        ax3.set_ylabel("Cond2")
+        ax3.legend()
+        ax3.grid()
+
+        ax4 = axs[1, 1]
+        ax4.plot(hist["inv_amp_max"], label="Max Inverse Amplification Estimate")
+        ax4.set_title("Inverse Amplification Estimate")
+        ax4.set_xlabel("Iteration")
+        ax4.set_ylabel("Inv Amp Max")
+        ax4.legend()
+        ax4.grid()
+
+        plt.tight_layout()
+        plt.show()
