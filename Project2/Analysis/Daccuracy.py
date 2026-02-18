@@ -33,7 +33,7 @@ BC = np.array([[1.0, 0.0, 0.0], [1.0, 0.0, -1.0]])
 Ns = [10, 100, 1000, 10000]
 errors = {}
 domain = (0.0, 1.0)
-solver = FDM_Solver(F, None, None, 2, domain, BC)
+solver = FDM_Solver(F=F, N=2, domain=domain, BC=BC)
 
 for N in Ns:
 	# Initialize solver with numerical partial derivatives (pass None)

@@ -383,4 +383,8 @@ class FDM_Solver:
         
         # Update initial guess to match new grid size
         self.w0 = np.linspace(self.xstart, self.xend, self.N + 1)
+        
+        # Update residual N if it exists
+        if self.residual is not None:
+            self.residual.N = self.N
     
