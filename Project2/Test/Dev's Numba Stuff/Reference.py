@@ -102,7 +102,7 @@ def analytical_solution(x):
 # =============================================================================
 
 @njit
-def build_residual(w, x, h, F, Fy, Fyp):
+def build_residual(w, x, h, F):
     """
     Build the residual vector r where we solve r(w) = 0
     
@@ -283,12 +283,15 @@ def newton_solve_jit(w0, x, h, tol=1e-8, max_iter=100):
 def compute_error(w, x):
     """Compute max absolute error against analytical solution"""
     max_err = 0.0
+    rms_err = 0.0
     for i in range(len(w)):
         exact = analytical_solution(x[i])
         error = np.abs(w[i] - exact)
         if error > max_err:
             max_err = error
-    return max_err
+        rms_err += error**2
+    rms_err = np.sqrt(rms_err / len(w))
+    return max_err, rms_err
 
 
 # =============================================================================
@@ -327,8 +330,9 @@ if __name__ == "__main__":
     
     # Error analysis
     print(f"\nError Analysis:")
-    max_error = compute_error(w_solution, x)
+    max_error, rms_error = compute_error(w_solution, x)
     print(f"  Max absolute error: {max_error:.8e}")
+    print(f"  RMS error: {rms_error:.8e}") 
     
     # Plotting
     plt.figure(figsize=(10, 5))
