@@ -7,7 +7,7 @@ from .validation import (
     validate_finite_value
 )
 
-def load_config(filepath="config.json"):
+def load_config(filepath="configs/config.json"):
     """
     Load and validate configuration from JSON file.
     

@@ -7,12 +7,12 @@ import os
 # Add parent directory to path to import Core
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Core.FDM_Solver import FDM_Solver
-from Core.Loader import load_config
+from core.FDM_Solver import FDM_Solver
+from core.Loader import load_config
 
 # --- Main Execution ---
 
-config_path = 'config.json'
+config_path = 'configs/config.json'
 try:
     N, domain, BC, F, Fy, Fyp, analytical_solution, tol, max_iter, compute_error = load_config(config_path)
     print(f"Successfully loaded configuration from {config_path}")

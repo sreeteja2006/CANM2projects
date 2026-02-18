@@ -8,9 +8,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
 	sys.path.insert(0, ROOT)
 
-from Project2.Core.FDM_Solver import FDM_Solver
+from Project2.core.FDM_Solver import FDM_Solver
 
-PLOTS_DIR = Path(__file__).parent.parent / "Plots"
+PLOTS_DIR = Path(__file__).parent.parent / "outputs" / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 def F(x, y, yp):

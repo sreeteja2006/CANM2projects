@@ -38,8 +38,8 @@ import time
 from pathlib import Path
 
 
-# ensure output plots go into Project2/Plots regardless of where this script is run
-PLOTS_DIR = Path(__file__).parent.parent.parent / "Plots"
+# ensure output plots go into Project2/outputs/plots regardless of where this script is run
+PLOTS_DIR = Path(__file__).parent.parent.parent / "outputs" / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    # save into Project2 Plots folder
+    # save into Project2 outputs/plots folder
     save_path = PLOTS_DIR / 'Reference_Solution_Error.png'
     plt.savefig(save_path, dpi=150)
     print(f"\nPlot saved to: {save_path}")

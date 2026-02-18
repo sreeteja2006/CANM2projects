@@ -9,8 +9,8 @@ import sys
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from Core.Loader import load_config
-from Core.FDM_Solver import FDM_Solver
+from core.Loader import load_config
+from core.FDM_Solver import FDM_Solver
 
 
 def print_separator(char="=", length=70):
@@ -207,8 +207,8 @@ def output_menu(x, w, analytical_func):
         if not filename.endswith('.csv'):
             filename += '.csv'
         
-        filepath = os.path.join("Plots", filename)
-        os.makedirs("Plots", exist_ok=True)
+        filepath = os.path.join("outputs", "data", filename)
+        os.makedirs(os.path.join("outputs", "data"), exist_ok=True)
         
         if analytical_func is not None:
             y_exact = analytical_func(x)
@@ -226,11 +226,11 @@ def plot_solution(x, w, analytical_func, problem_desc="Solution"):
     """Plot numerical and analytical solutions."""
     plt.figure(figsize=(10, 6))
     
-    plt.plot(x, w, 'b-o', label='Numerical Solution', markersize=4)
+    plt.plot(x, w, 'b-x', label='Numerical Solution', markersize=6)
     
     if analytical_func is not None:
         y_exact = analytical_func(x)
-        plt.plot(x, y_exact, 'r--', label='Analytical Solution', linewidth=2)
+        plt.plot(x, y_exact, color='lightcoral', linestyle='--', label='Analytical Solution', linewidth=2)
     
     plt.xlabel('x', fontsize=12)
     plt.ylabel('y', fontsize=12)
@@ -240,8 +240,8 @@ def plot_solution(x, w, analytical_func, problem_desc="Solution"):
     plt.tight_layout()
     
     # Save plot
-    os.makedirs("Plots", exist_ok=True)
-    save_path = os.path.join("Plots", "solution.png")
+    os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
+    save_path = os.path.join("outputs", "plots", "solution.png")
     plt.savefig(save_path, dpi=150)
     print(f"\nPlot saved to: {save_path}")
     plt.show()
@@ -269,8 +269,8 @@ def compute_and_display_error(x, w, analytical_func):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    os.makedirs("Plots", exist_ok=True)
-    error_path = os.path.join("Plots", "error.png")
+    os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
+    error_path = os.path.join("outputs", "plots", "error.png")
     plt.savefig(error_path, dpi=150)
     print(f"Error plot saved to: {error_path}")
     plt.show()
@@ -282,12 +282,12 @@ def main():
     print_header()
     
     # Load configuration
-    use_config = get_yes_no("Load configuration from config.json? (y/n): ")
+    use_config = get_yes_no("Load configuration from configs/config.json? (y/n): ")
     
     if use_config:
         try:
-            print("\nLoading configuration from config.json...")
-            N, domain, BC, F_func, Fy_func, Fyp_func, analytical_func, tol, max_iter, compute_error = load_config("config.json")
+            print("\nLoading configuration from configs/config.json...")
+            N, domain, BC, F_func, Fy_func, Fyp_func, analytical_func, tol, max_iter, compute_error = load_config("configs/config.json")
             print("Configuration loaded successfully.\n")
         except Exception as e:
             print(f"\nError loading config file: {e}")

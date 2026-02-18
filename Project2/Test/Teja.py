@@ -1,11 +1,11 @@
-from Analysis.stability import StabilitySolver
+from analysis.stability import StabilitySolver
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-os.makedirs("Plots", exist_ok=True)
+os.makedirs(os.path.join("outputs", "plots"), exist_ok=True)
 
 def F2(x, y, yp):
     return 2.0 * y - y**3 + 25.0 * np.sin(5.0 * np.pi * x / 2.0)
@@ -128,7 +128,7 @@ plt.xlabel("Newton iteration k")
 plt.ylabel(r"$\|F(w^{(k)})\|_\infty$")
 plt.title("Residual vs iteration (Groups 2--6)")
 plt.legend()
-safe_savefig("Plots/residual_vs_iteration_G2toG6.png")
+safe_savefig("outputs/plots/residual_vs_iteration_G2toG6.png")
 
 plt.figure()
 for n, c in zip(names, cond_lists):
@@ -137,7 +137,7 @@ plt.xlabel("Newton iteration k")
 plt.ylabel(r"$\kappa_2(J)$")
 plt.title("Condition number vs iteration (Groups 2--6)")
 plt.legend()
-safe_savefig("Plots/cond_vs_iteration_G2toG6.png")
+safe_savefig("outputs/plots/cond_vs_iteration_G2toG6.png")
 
 plt.figure()
 for n, s in zip(names, sig_lists):
@@ -146,7 +146,7 @@ plt.xlabel("Newton iteration k")
 plt.ylabel(r"$\sigma_{\min}(J)$")
 plt.title("Smallest singular value vs iteration (Groups 2--6)")
 plt.legend()
-safe_savefig("Plots/sigma_min_vs_iteration_G2toG6.png")
+safe_savefig("outputs/plots/sigma_min_vs_iteration_G2toG6.png")
 
 for name in names:
     w, iters, hist = all_hist[name]
