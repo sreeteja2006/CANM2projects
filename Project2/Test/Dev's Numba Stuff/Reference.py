@@ -49,7 +49,7 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 # Domain parameters
 X_START = 0.0
 X_END = 1.0
-N = 2**25  # number of interior grid points
+N = 2**25 # number of interior grid points
 
 # Boundary conditions (Dirichlet: y(x0) = c0, y(x1) = c1)
 BC_LEFT_VALUE = 0.0      # y(0) = 0
@@ -256,7 +256,7 @@ def newton_solve_jit(w0, x, h, tol=1e-8, max_iter=100):
     for iteration in range(max_iter):
         # Build residual and Jacobian
         # print(iteration)
-        r = build_residual(w, x, h, F, Fy, Fyp)
+        r = build_residual(w, x, h, F)
         u, l, d = build_jacobian(w, x, h, Fy, Fyp)
         
         # Solve J * delta = -r for delta
@@ -335,7 +335,7 @@ if __name__ == "__main__":
     print(f"  RMS error: {rms_error:.8e}") 
     
     # Plotting
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(8.85, 6))
     errors = np.abs(w_solution - analytical_solution(x))
     plt.semilogy(x, errors, 'g-', linewidth=2)
     plt.xlabel('x')
