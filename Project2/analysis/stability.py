@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 from core.TDMA import TDMA
 from core.Residual import Residual
 from core.Jacobian import Jacobian
@@ -7,212 +9,411 @@ from core.Boundary_Conditions import Boundary_Conditions
 
 
 class StabilitySolver:
-
     def __init__(self, F, Fy, Fyp, N, domain, BC, w0=None):
-
         self.F = F
         self.Fy = Fy
         self.Fyp = Fyp
-        self.N = N
-        self.domain = domain
+
+        self.N = int(N)
+        self.domain = (float(domain[0]), float(domain[1]))
         self.BC = BC
 
-        self.x = np.linspace(domain[0], domain[1], N + 1)
-        self.h = (domain[1] - domain[0]) / N
+        a, b = self.domain
+        self.x = np.linspace(a, b, self.N + 1)
+        self.h = (b - a) / self.N
 
-        self.boundary_conditions = Boundary_Conditions(BC)
+        bc = Boundary_Conditions(BC)
+        self.left_bc_jac = bc.build_left_bc_jac(Fy, Fyp, self.x[0])
+        self.right_bc_jac = bc.build_right_bc_jac(Fy, Fyp, self.x[-1])
+        self.left_bc_res = bc.build_left_bc_res(F, self.x[0])
+        self.right_bc_res = bc.build_right_bc_res(F, self.x[-1])
 
-        self.left_bc_jac = self.boundary_conditions.build_left_bc_jac(Fy, Fyp, self.x[0])
-        self.right_bc_jac = self.boundary_conditions.build_right_bc_jac(Fy, Fyp, self.x[-1])
-
-        self.left_bc_res = self.boundary_conditions.build_left_bc_res(F, self.x[0])
-        self.right_bc_res = self.boundary_conditions.build_right_bc_res(F, self.x[-1])
-
-        self.function_generator = Function_Generator(F, Fy, Fyp)
-
-        self.fu, self.fl, self.fd = self.function_generator.build_tridiagonal_terms()
-        self.residual_F = self.function_generator.build_residual_function()
+        fg = Function_Generator(F, Fy, Fyp)
+        self.fu, self.fl, self.fd = fg.build_tridiagonal_terms()
+        self.residual_F = fg.build_residual_function()
 
         if w0 is None:
-            self.w = np.linspace(domain[0], domain[1], N + 1)
+            self.w = np.linspace(a, b, self.N + 1, dtype=float)
         else:
-            self.w = np.array(w0)
+            self.w = np.array(w0, dtype=float)
+
+    # =========================
+    # Basic helper functions
+    # =========================
 
     @staticmethod
-    def build_full_tridiag(d, l, u):
+    def _full_tridiag(d, l, u):
         n = len(d)
-        J = np.zeros((n, n))
+        J = np.zeros((n, n), dtype=float)
         J[np.arange(n), np.arange(n)] = d
         J[np.arange(1, n), np.arange(n - 1)] = l
         J[np.arange(n - 1), np.arange(1, n)] = u
         return J
 
     @staticmethod
-    def diag_dom_metrics(d, l, u):
-        n = len(d)
-        ok = True
-        min_ratio = np.inf
-
-        for i in range(n):
-            diag = abs(d[i])
-            off = 0.0
-            if i > 0:
-                off += abs(l[i - 1])
-            if i < n - 1:
-                off += abs(u[i])
-
-            if diag < off:
-                ok = False
-
-            if off > 0:
-                min_ratio = min(min_ratio, diag / off)
-
-        if min_ratio == np.inf:
-            min_ratio = float("inf")
-
-        return {"dd_ok": ok, "dd_min_ratio": float(min_ratio)}
-
-    @staticmethod
-    def infnorm_tridiag(d, l, u):
-        n = len(d)
-        max_sum = 0.0
-        for i in range(n):
-            s = abs(d[i])
-            if i > 0:
-                s += abs(l[i - 1])
-            if i < n - 1:
-                s += abs(u[i])
-            max_sum = max(max_sum, s)
-        return float(max_sum)
-
-    @staticmethod
-    def inv_amplification_estimate(d, l, u, trials=10, seed=0):
-        rng = np.random.default_rng(seed)
-        n = len(d)
-        amps = []
-
-        for _ in range(trials):
-            b = rng.standard_normal(n)
-            b /= np.linalg.norm(b, 2)
-            x = TDMA(u.copy(), l.copy(), d.copy(), b)
-            amps.append(np.linalg.norm(x, 2))
-
-        amps = np.array(amps)
-        return {
-            "inv_amp_max": float(np.max(amps)),
-            "inv_amp_med": float(np.median(amps))
-        }
-
-    @staticmethod
-    def sigma_min_and_cond2(J):
-        s = np.linalg.svd(J, compute_uv=False)
+    def _svd_metrics(M):
+        s = np.linalg.svd(M, compute_uv=False)
         smin = float(np.min(s))
         smax = float(np.max(s))
-        cond2 = float("inf") if smin == 0 else smax / smin
-        return {"sigma_min": smin, "cond2": cond2}
+        cond2 = float("inf") if smin == 0 else float(smax / smin)
+        return smin, cond2
 
+    @staticmethod
+    def _inv_amp_dense(J, trials=20, seed=0):
+        rng = np.random.default_rng(seed)
+        n = J.shape[0]
+        vals = []
+        for _ in range(trials):
+            b = rng.standard_normal(n)
+            nb = np.linalg.norm(b, 2)
+            if nb == 0:
+                continue
+            b = b / nb
+            try:
+                x = np.linalg.solve(J, b)
+            except np.linalg.LinAlgError:
+                return float("inf"), float("inf")
+            vals.append(float(np.linalg.norm(x, 2)))
+        if not vals:
+            return float("inf"), float("inf")
+        vals = np.array(vals, dtype=float)
+        return float(np.max(vals)), float(np.median(vals))
 
-    def solve(self, tol=1e-10, max_iter=50, verbose=True):
+    @staticmethod
+    def _inv_amp_tridiag(d, l, u, trials=20, seed=0):
+        rng = np.random.default_rng(seed)
+        n = len(d)
+        vals = []
+        for _ in range(trials):
+            b = rng.standard_normal(n)
+            nb = np.linalg.norm(b, 2)
+            if nb == 0:
+                continue
+            b = b / nb
+            x = TDMA(u.copy(), l.copy(), d.copy(), b)
+            vals.append(float(np.linalg.norm(x, 2)))
+        if not vals:
+            return float("inf"), float("inf")
+        vals = np.array(vals, dtype=float)
+        return float(np.max(vals)), float(np.median(vals))
 
-        residual = Residual(self.residual_F, self.N,
-                            self.left_bc_res, self.right_bc_res)
+    # =======================================================
+    # (1) FDM Newton solver + stability metrics
+    # =======================================================
 
-        jacobian = Jacobian(self.fu, self.fl, self.fd,
-                            self.left_bc_jac, self.right_bc_jac)
+    def solve_fdm(self, tol=1e-10, max_iter=50, verbose=False):
+        residual = Residual(self.residual_F, self.N, self.left_bc_res, self.right_bc_res)
+        jacobian = Jacobian(self.fu, self.fl, self.fd, self.left_bc_jac, self.right_bc_jac)
 
         w = self.w.copy()
         x = self.x
 
-        # history storage
         hist = {
-            "res_inf": [],
             "res_2": [],
             "sigma_min": [],
             "cond2": [],
             "inv_amp_max": [],
-            "dd_ok": []
+            "inv_amp_med": [],
         }
 
-        for k in range(max_iter):
-
+        for k in range(int(max_iter)):
             u, l, d = jacobian.build(w, x)
-            F = residual.build(w, x)
+            Fv = residual.build(w, x)
 
-            res_inf = np.linalg.norm(F, np.inf)
-            res_2 = np.linalg.norm(F, 2)
+            r2 = float(np.linalg.norm(Fv, 2))
+            hist["res_2"].append(r2)
 
-            hist["res_inf"].append(res_inf)
-            hist["res_2"].append(res_2)
+            Jfull = self._full_tridiag(d, l, u)
+            smin, c2 = self._svd_metrics(Jfull)
+            hist["sigma_min"].append(smin)
+            hist["cond2"].append(c2)
 
-            dd = self.diag_dom_metrics(d, l, u)
-            hist["dd_ok"].append(dd["dd_ok"])
+            iamx, iamed = self._inv_amp_tridiag(d, l, u, seed=k)
+            hist["inv_amp_max"].append(iamx)
+            hist["inv_amp_med"].append(iamed)
 
-            inv_amp = self.inv_amplification_estimate(d, l, u, seed=k)
-            hist["inv_amp_max"].append(inv_amp["inv_amp_max"])
-
-            J_full = self.build_full_tridiag(d, l, u)
-            svd_metrics = self.sigma_min_and_cond2(J_full)
-
-            hist["sigma_min"].append(svd_metrics["sigma_min"])
-            hist["cond2"].append(svd_metrics["cond2"])
-
-            delta = TDMA(u.copy(), l.copy(), d.copy(), -F)
-            step_norm = np.linalg.norm(delta, np.inf)
+            delta = TDMA(u.copy(), l.copy(), d.copy(), -Fv)
+            step = float(np.linalg.norm(delta, np.inf))
 
             if verbose:
-                print(f"Iter {k}: ||F||={res_2:.3e}")
-                print(f"  Diag Dominant: {dd['dd_ok']}")
-                print(f"  sigma_min: {svd_metrics['sigma_min']:.3e}")
-                print(f"  cond2: {svd_metrics['cond2']:.3e}")
-                print(f"  inv_amp_max: {inv_amp['inv_amp_max']:.3e}")
+                print(
+                    f"FDM iter {k}: ||F||2={r2:.3e}  "
+                    f"sigma_min={smin:.3e}  cond2={c2:.3e}  inv_amp_max={iamx:.3e}"
+                )
 
             w += delta
-
-            if step_norm < tol:
-                if verbose:
-                    print(f"Converged in {k+1} iterations")
+            if step < tol:
                 return w, k + 1, hist
 
-        print("Did not converge")
-        return w, max_iter, hist
-    def plot_convergence(self, hist):
-        import matplotlib.pyplot as plt
+        return w, int(max_iter), hist
 
-        fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+    # =======================================================
+    # (2) Shooting Newton solver + 2x2 Jacobian metrics
+    # =======================================================
 
-        ax1 = axs[0, 0]
+    def _rk4_step_uS(self, x, u, S, h):
+        def f_u(xv, uv):
+            yv, v = float(uv[0]), float(uv[1])
+            return np.array([v, self.F(xv, yv, v)], dtype=float)
 
-        ax1.semilogy(hist["res_inf"], label="Inf Norm")
-        ax1.semilogy(hist["res_2"], label="2 Norm")
-        ax1.set_title("Residual Norms")
-        ax1.set_xlabel("Iteration")
-        ax1.set_ylabel("Norm")
-        ax1.legend()
-        ax1.grid()
+        def A(xv, uv):
+            yv, v = float(uv[0]), float(uv[1])
+            return np.array(
+                [[0.0, 1.0],
+                 [self.Fy(xv, yv, v), self.Fyp(xv, yv, v)]],
+                dtype=float,
+            )
 
-        ax2=axs[0, 1]
-        ax2.plot(hist["sigma_min"], label="Sigma Min")
-        ax2.set_title("Minimum Singular Value")
-        ax2.set_xlabel("Iteration")
-        ax2.set_ylabel("Sigma Min")
-        ax2.legend()
-        ax2.grid()
+        k1u = f_u(x, u)
+        k1S = A(x, u) @ S
 
-        ax3 = axs[1, 0]
-        ax3.plot(hist["cond2"], label="Condition Number (2-norm)")
-        ax3.set_title("Condition Number")
-        ax3.set_xlabel("Iteration")
-        ax3.set_ylabel("Cond2")
-        ax3.legend()
-        ax3.grid()
+        u2 = u + 0.5 * h * k1u
+        S2 = S + 0.5 * h * k1S
+        k2u = f_u(x + 0.5 * h, u2)
+        k2S = A(x + 0.5 * h, u2) @ S2
 
-        ax4 = axs[1, 1]
-        ax4.plot(hist["inv_amp_max"], label="Max Inverse Amplification Estimate")
-        ax4.set_title("Inverse Amplification Estimate")
-        ax4.set_xlabel("Iteration")
-        ax4.set_ylabel("Inv Amp Max")
-        ax4.legend()
-        ax4.grid()
+        u3 = u + 0.5 * h * k2u
+        S3 = S + 0.5 * h * k2S
+        k3u = f_u(x + 0.5 * h, u3)
+        k3S = A(x + 0.5 * h, u3) @ S3
+
+        u4 = u + h * k3u
+        S4 = S + h * k3S
+        k4u = f_u(x + h, u4)
+        k4S = A(x + h, u4) @ S4
+
+        un = u + (h / 6.0) * (k1u + 2 * k2u + 2 * k3u + k4u)
+        Sn = S + (h / 6.0) * (k1S + 2 * k2S + 2 * k3S + k4S)
+        return un, Sn
+
+    def shoot_integrate_uS(self, y0, yp0, h=5e-4, eps=1e-3):
+        a, b = self.domain
+        x0 = a + float(eps)
+        x1 = b
+        if x1 <= x0:
+            return None, None, True
+
+        n = int(np.ceil((x1 - x0) / h))
+        n = max(n, 1)
+        h = (x1 - x0) / n
+
+        # eps start: approximate only y(eps) = y0 + yp0*eps
+        u = np.array([float(y0 + yp0 * eps), float(yp0)], dtype=float)
+
+        # sensitivity at eps:
+        # y(eps)=y0+eps*yp0, yp(eps)=yp0
+        S = np.array([[1.0, float(eps)],
+                      [0.0, 1.0]], dtype=float)
+
+        x = x0
+        for _ in range(n):
+            u, S = self._rk4_step_uS(x, u, S, h)
+            x += h
+            if not (np.isfinite(u).all() and np.isfinite(S).all()):
+                return None, None, True
+
+        return u, S, False
+
+    def shoot_residual_and_jacobian(self, y0, yp0, h=5e-4, eps=1e-3):
+        (aL, bL, cL), (aR, bR, cR) = self.BC
+
+        r1 = float(aL * y0 + bL * yp0 + cL)
+
+        u_end, S_end, blew = self.shoot_integrate_uS(y0, yp0, h=h, eps=eps)
+        if blew or u_end is None or S_end is None:
+            return None, None, True
+
+        yb = float(u_end[0])
+        ypb = float(u_end[1])
+
+        r2 = float(aR * yb + bR * ypb + cR)
+
+        J11 = float(aL)
+        J12 = float(bL)
+
+        S11 = float(S_end[0, 0])
+        S12 = float(S_end[0, 1])
+        S21 = float(S_end[1, 0])
+        S22 = float(S_end[1, 1])
+
+        J21 = float(aR * S11 + bR * S21)
+        J22 = float(aR * S12 + bR * S22)
+
+        r = np.array([r1, r2], dtype=float)
+        J = np.array([[J11, J12], [J21, J22]], dtype=float)
+        return r, J, False
+
+    def solve_shooting_newton(
+        self,
+        y0_init,
+        yp0_init,
+        h=5e-4,
+        eps=1e-3,
+        tol=1e-10,
+        max_iter=30,
+        verbose=False,
+    ):
+        y0 = float(y0_init)
+        yp0 = float(yp0_init)
+
+        hist = {
+            "res_2": [],
+            "sigma_min": [],
+            "cond2": [],
+            "inv_amp_max": [],
+            "inv_amp_med": [],
+        }
+
+        for k in range(int(max_iter)):
+            r, J, blew = self.shoot_residual_and_jacobian(y0, yp0, h=h, eps=eps)
+            if blew or r is None or J is None:
+                return np.nan, np.nan, k, False, hist
+
+            r2 = float(np.linalg.norm(r, 2))
+            hist["res_2"].append(r2)
+
+            smin, c2 = self._svd_metrics(J)
+            hist["sigma_min"].append(smin)
+            hist["cond2"].append(c2)
+
+            iamx, iamed = self._inv_amp_dense(J, seed=k)
+            hist["inv_amp_max"].append(iamx)
+            hist["inv_amp_med"].append(iamed)
+
+            if verbose:
+                print(
+                    f"SHOOT iter {k}: ||r||2={r2:.3e}  "
+                    f"sigma_min={smin:.3e}  cond2={c2:.3e}  inv_amp_max={iamx:.3e}"
+                )
+
+            if r2 < tol:
+                return y0, yp0, k + 1, True, hist
+
+            try:
+                delta = np.linalg.solve(J, -r)
+            except np.linalg.LinAlgError:
+                return np.nan, np.nan, k, False, hist
+
+            y0 += float(delta[0])
+            yp0 += float(delta[1])
+
+            if not (np.isfinite(y0) and np.isfinite(yp0)):
+                return np.nan, np.nan, k, False, hist
+
+        return y0, yp0, int(max_iter), False, hist
+
+    # =======================================================
+    # (3) Compare + plotting helpers
+    # =======================================================
+
+    def compare_fdm_vs_shooting(
+        self,
+        fdm_tol=1e-10,
+        fdm_max_iter=50,
+        shoot_y0_init=0.0,
+        shoot_yp0_init=1.0,
+        shoot_h=5e-4,
+        shoot_eps=1e-3,
+        shoot_tol=1e-10,
+        shoot_max_iter=30,
+        verbose=False,
+    ):
+        _, it_fdm, hist_fdm = self.solve_fdm(tol=fdm_tol, max_iter=fdm_max_iter, verbose=verbose)
+
+        y0_star, yp0_star, it_sh, ok_sh, hist_sh = self.solve_shooting_newton(
+            y0_init=shoot_y0_init,
+            yp0_init=shoot_yp0_init,
+            h=shoot_h,
+            eps=shoot_eps,
+            tol=shoot_tol,
+            max_iter=shoot_max_iter,
+            verbose=verbose,
+        )
+
+        out = {
+            "FDM_iters": int(it_fdm),
+            "FDM_cond2_final": float(hist_fdm["cond2"][-1]) if hist_fdm["cond2"] else float("inf"),
+            "FDM_sigma_min_final": float(hist_fdm["sigma_min"][-1]) if hist_fdm["sigma_min"] else float("inf"),
+            "FDM_inv_amp_max_final": float(hist_fdm["inv_amp_max"][-1]) if hist_fdm["inv_amp_max"] else float("inf"),
+            "SHOOT_ok": bool(ok_sh),
+            "SHOOT_iters": int(it_sh),
+            "SHOOT_y0": float(y0_star) if np.isfinite(y0_star) else np.nan,
+            "SHOOT_yp0": float(yp0_star) if np.isfinite(yp0_star) else np.nan,
+            "SHOOT_cond2_final": float(hist_sh["cond2"][-1]) if hist_sh["cond2"] else float("inf"),
+            "SHOOT_sigma_min_final": float(hist_sh["sigma_min"][-1]) if hist_sh["sigma_min"] else float("inf"),
+            "SHOOT_inv_amp_max_final": float(hist_sh["inv_amp_max"][-1]) if hist_sh["inv_amp_max"] else float("inf"),
+        }
+
+        return out, hist_fdm, hist_sh
+
+    @staticmethod
+    def plot_both_cond2(hist_fdm, hist_sh, out_path="Plots/cond2_FDM_vs_SHOOT.png"):
+        kf = np.arange(len(hist_fdm["cond2"]), dtype=float)
+        ks = np.arange(len(hist_sh["cond2"]), dtype=float)
+
+        plt.figure(figsize=(10, 6))
+        if len(kf):
+            plt.semilogy(kf, hist_fdm["cond2"], marker="o", label="FDM cond2(J)")
+        if len(ks):
+            plt.semilogy(ks, hist_sh["cond2"], marker="o", label="Shooting cond2(J)")
+        plt.xlabel("Iteration")
+        plt.ylabel(r"$\kappa_2(J)$")
+        plt.title("Condition number: FDM vs Shooting")
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close()
+
+    @staticmethod
+    def plot_both_sigma_min(hist_fdm, hist_sh, out_path="Plots/sigmaMin_FDM_vs_SHOOT.png"):
+        kf = np.arange(len(hist_fdm["sigma_min"]), dtype=float)
+        ks = np.arange(len(hist_sh["sigma_min"]), dtype=float)
+
+        plt.figure(figsize=(10, 6))
+        if len(kf):
+            plt.semilogy(kf, hist_fdm["sigma_min"], marker="o", label="FDM sigma_min(J)")
+        if len(ks):
+            plt.semilogy(ks, hist_sh["sigma_min"], marker="o", label="Shooting sigma_min(J)")
+        plt.xlabel("Iteration")
+        plt.ylabel(r"$\sigma_{\min}(J)$")
+        plt.title("Smallest singular value: FDM vs Shooting")
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close()
+    
+    @staticmethod
+    def plot_fdm_all(hist_fdm, out_path="Plots/FDM_all_metrics.png"):
+        k_res = np.arange(len(hist_fdm["res_2"]), dtype=float)
+        k_cond = np.arange(len(hist_fdm["cond2"]), dtype=float)
+        k_sig = np.arange(len(hist_fdm["sigma_min"]), dtype=float)
+
+        fig, axs = plt.subplots(3, 1, figsize=(8, 10))
+
+        # Residual
+        if len(k_res):
+            axs[0].semilogy(k_res, hist_fdm["res_2"], marker="o")
+        axs[0].set_xlabel("Iteration")
+        axs[0].set_ylabel(r"$\|F\|_2$")
+        axs[0].set_title("FDM Residual vs Iteration")
+        axs[0].grid(True)
+
+        # Condition number
+        if len(k_cond):
+            axs[1].semilogy(k_cond, hist_fdm["cond2"], marker="o")
+        axs[1].set_xlabel("Iteration")
+        axs[1].set_ylabel(r"$\kappa_2(J)$")
+        axs[1].set_title("FDM Condition Number vs Iteration")
+        axs[1].grid(True)
+
+        # Smallest singular value
+        if len(k_sig):
+            axs[2].semilogy(k_sig, hist_fdm["sigma_min"], marker="o")
+        axs[2].set_xlabel("Iteration")
+        axs[2].set_ylabel(r"$\sigma_{\min}(J)$")
+        axs[2].set_title("FDM Smallest Singular Value vs Iteration")
+        axs[2].grid(True)
 
         plt.tight_layout()
-        plt.show()
+        plt.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close()
