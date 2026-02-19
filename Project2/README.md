@@ -35,6 +35,27 @@ The main program saves numerical/analytical plots and optional CSV exports to th
 - Analysis scripts: [Project2/analysis](Project2/analysis)
 - Test scripts: [Project2/Test](Project2/Test)
 
+## Question1 Folder
+
+[Project2/question1](Project2/question1) contains the special-case solver and derivation for Question 1. This problem includes an artificial singularity at $x = 0$, so the residual and Jacobian are derived separately and are not part of the general solver workflow.
+
+- Solver implementation: [Project2/question1/q1_solver.py](Project2/question1/q1_solver.py)
+- Derivation notes: [Project2/question1/Derivation.md](Project2/question1/Derivation.md)
+
+### Usage (Brief)
+
+From the Project2 folder:
+
+```bash
+python question1/q1_solver.py
+```
+
+To import the solver function:
+
+```python
+from question1.q1_solver import question_1_solver
+```
+
 ## Using FDM_Solver with Custom Jacobian and Residual
 
 If you have your own Jacobian and Residual classes, pass them directly and omit `F`:
