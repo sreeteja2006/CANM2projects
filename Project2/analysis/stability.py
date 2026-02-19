@@ -96,6 +96,16 @@ class StabilitySolver:
             return float("inf"), float("inf")
         vals = np.array(vals, dtype=float)
         return float(np.max(vals)), float(np.median(vals))
+    
+    @staticmethod
+    def _is_diagonally_dominant(d, l, u):
+        n = len(d)
+        for i in range(n):
+            left = abs(l[i-1]) if i > 0 else 0.0
+            right = abs(u[i]) if i < n-1 else 0.0
+            if abs(d[i]) < left + right:
+                return False
+        return True
 
     # =======================================================
     # (1) FDM Newton solver + stability metrics
@@ -114,6 +124,7 @@ class StabilitySolver:
             "cond2": [],
             "inv_amp_max": [],
             "inv_amp_med": [],
+            "dd_ok": [],
         }
 
         for k in range(int(max_iter)):
@@ -131,7 +142,8 @@ class StabilitySolver:
             iamx, iamed = self._inv_amp_tridiag(d, l, u, seed=k)
             hist["inv_amp_max"].append(iamx)
             hist["inv_amp_med"].append(iamed)
-
+            dd_ok = self._is_diagonally_dominant(d, l, u)
+            hist["dd_ok"].append(dd_ok)
             delta = TDMA(u.copy(), l.copy(), d.copy(), -Fv)
             step = float(np.linalg.norm(delta, np.inf))
 
@@ -147,9 +159,6 @@ class StabilitySolver:
 
         return w, int(max_iter), hist
 
-    # =======================================================
-    # (2) Shooting Newton solver + 2x2 Jacobian metrics
-    # =======================================================
 
     def _rk4_step_uS(self, x, u, S, h):
         def f_u(xv, uv):
@@ -350,7 +359,6 @@ class StabilitySolver:
     def plot_both_cond2(hist_fdm, hist_sh, out_path="Plots/cond2_FDM_vs_SHOOT.png"):
         kf = np.arange(len(hist_fdm["cond2"]), dtype=float)
         ks = np.arange(len(hist_sh["cond2"]), dtype=float)
-
         plt.figure(figsize=(10, 6))
         if len(kf):
             plt.semilogy(kf, hist_fdm["cond2"], marker="o", label="FDM cond2(J)")
@@ -363,7 +371,7 @@ class StabilitySolver:
         plt.legend()
         plt.savefig(out_path, dpi=200, bbox_inches="tight")
         plt.close()
-        
+
     @staticmethod
     def plot_both_sigma_min(hist_fdm, hist_sh, out_path="Plots/sigmaMin_FDM_vs_SHOOT.png"):
         kf = np.arange(len(hist_fdm["sigma_min"]), dtype=float)
