@@ -191,6 +191,7 @@ bc_left_res = lambda w, h: -2*w[1] + 2*w[0] + np.exp(20*w[0])*h**2/2
 ```python
 bc_left_jac = lambda w, h: (2 + 10*h**2*np.exp(20*w[0]), -2)
 ```
+
 ---
 
 ## Why This Derivation is Not in the Main Report
