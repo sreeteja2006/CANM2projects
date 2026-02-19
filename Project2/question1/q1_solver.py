@@ -81,7 +81,7 @@ def _plot_hist(hist, out_dir="outputs/plots", tag="Q1"):
     plt.close()
 
     plt.figure(figsize=(10, 6))
-    plt.semilogy(k, hist["smin"], marker="o")
+    plt.semilogy(k, hist["sigma_min"], marker="o")
     plt.xlabel("Newton iteration")
     plt.ylabel(r"$\sigma_{\min}(J)$")
     plt.title(f"Smallest singular value vs iteration ({tag})")
