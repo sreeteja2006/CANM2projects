@@ -250,7 +250,7 @@ class StabilitySolver:
         h=5e-4,
         eps=1e-3,
         tol=1e-10,
-        max_iter=30,
+        max_iter=50,
         verbose=False,
     ):
         y0 = float(y0_init)
@@ -363,7 +363,7 @@ class StabilitySolver:
         plt.legend()
         plt.savefig(out_path, dpi=200, bbox_inches="tight")
         plt.close()
-
+        
     @staticmethod
     def plot_both_sigma_min(hist_fdm, hist_sh, out_path="Plots/sigmaMin_FDM_vs_SHOOT.png"):
         kf = np.arange(len(hist_fdm["sigma_min"]), dtype=float)

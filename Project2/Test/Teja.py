@@ -162,14 +162,14 @@ solver = StabilitySolver(F3, Fy3, Fyp3, N=1000, domain=domain4, BC=BC4)
 
 out, hist_fdm, hist_sh = solver.compare_fdm_vs_shooting(
     shoot_y0_init=0.0,     
-    shoot_yp0_init=0.001,    
-    shoot_h=1e-3,
-    shoot_eps=1e-3,
+    shoot_yp0_init=1,    
+    shoot_h=1e-5,
+    shoot_eps=1e-3, 
     verbose=True
 )
 
 print(out)
 
-solver.plot_both_cond2(hist_fdm, hist_sh, out_path="Plots/cond2_FDM_vs_SHOOT.png")
-solver.plot_both_sigma_min(hist_fdm, hist_sh, out_path="Plots/sigmaMin_FDM_vs_SHOOT.png")
-solver.plot_fdm_all(hist_fdm, out_path="Plots/FDM_all.png")
+solver.plot_both_cond2(hist_fdm, hist_sh, out_path="outputs/plots/cond2_FDM_vs_SHOOT.png")
+solver.plot_both_sigma_min(hist_fdm, hist_sh, out_path="outputs/plots/sigmaMin_FDM_vs_SHOOT.png")
+solver.plot_fdm_all(hist_fdm, out_path="outputs/plots/FDM_all.png")
