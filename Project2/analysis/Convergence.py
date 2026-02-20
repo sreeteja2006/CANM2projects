@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from Project2.core.FDM_Solver import FDM_Solver
+from core.FDM_Solver import FDM_Solver
 
 class ConvergenceStudy:
     """

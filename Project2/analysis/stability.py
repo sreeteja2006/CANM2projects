@@ -6,7 +6,7 @@ from core.Residual import Residual
 from core.Jacobian import Jacobian
 from core.Function_Generator import Function_Generator
 from core.Boundary_Conditions import Boundary_Conditions
-
+from core.FDM_Solver import FDM_Solver
 
 class StabilitySolver:
     def __init__(self, F, Fy, Fyp, N, domain, BC, w0=None):
@@ -22,7 +22,14 @@ class StabilitySolver:
         self.x = np.linspace(a, b, self.N + 1)
         self.h = (b - a) / self.N
 
+        fdmsolver = FDM_Solver(N,domain,F, Fy, Fyp, BC)
         bc = Boundary_Conditions(BC)
+
+        if(Fy is None):
+            Fy = fdmsolver._approx_Fy
+        if(Fyp is None):
+            Fyp = fdmsolver._approx_Fyp
+
         self.left_bc_jac = bc.build_left_bc_jac(Fy, Fyp, self.x[0])
         self.right_bc_jac = bc.build_right_bc_jac(Fy, Fyp, self.x[-1])
         self.left_bc_res = bc.build_left_bc_res(F, self.x[0])
@@ -311,7 +318,7 @@ class StabilitySolver:
 
     
     @staticmethod
-    def plot_fdm_all(hist_fdm, out_path="Plots/FDM_all_metrics.png"):
+    def plot_fdm_all(hist_fdm, out_path="outputs/plots/FDM_all_metrics.png"):
         k_res = np.arange(len(hist_fdm["res_2"]), dtype=float)
         k_cond = np.arange(len(hist_fdm["cond2"]), dtype=float)
         k_sig = np.arange(len(hist_fdm["sigma_min"]), dtype=float)
