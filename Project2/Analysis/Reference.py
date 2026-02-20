@@ -33,15 +33,15 @@ if ROOT not in sys.path:
 from Core.Loader import load_config
 
 # Ensure output plots go into Project2/outputs/plots
-PLOTS_DIR = Path(__file__).parent.parent.parent / "outputs" / "plots"
+PLOTS_DIR = Path(__file__).parent.parent / "outputs" / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-YREF_DIR = Path(__file__).parent.parent.parent / "Analysis"
+YREF_DIR = Path(__file__).parent
 YREF_DIR.mkdir(parents=True, exist_ok=True)
 # =============================================================================
 # PART 1: LOAD CONFIGURATION
 # =============================================================================
-config_path = os.path.join(os.path.dirname(__file__), "..", "..", "configs", "config.json")
+config_path = os.path.join(os.path.dirname(__file__), "..", "configs", "config.json")
 (
     _, domain, BC,
     F_func, Fy_func, Fyp_func,
@@ -409,23 +409,23 @@ def compute_analytical_error(x, h):
 # so they compile independently from the main solve path.
 # =============================================================================
 
-@njit
-def _F_warm(x, y, yp):
-    return -(yp * yp) / (y + 1e-4)
+# @njit
+# def _F_warm(x, y, yp):
+#     return -(yp * yp) / (y + 1e-4)
 
-@njit
-def _Fy_warm(x, y, yp):
-    eps = 1e-7 * max(1.0, abs(y))
-    if eps < 1e-12:
-        eps = 1e-7
-    return (_F_warm(x, y + eps, yp) - _F_warm(x, y - eps, yp)) / (2.0 * eps)
+# @njit
+# def _Fy_warm(x, y, yp):
+#     eps = 1e-7 * max(1.0, abs(y))
+#     if eps < 1e-12:
+#         eps = 1e-7
+#     return (_F_warm(x, y + eps, yp) - _F_warm(x, y - eps, yp)) / (2.0 * eps)
 
-@njit
-def _Fyp_warm(x, y, yp):
-    eps = 1e-7 * max(1.0, abs(yp))
-    if eps < 1e-12:
-        eps = 1e-7
-    return (_F_warm(x, y, yp + eps) - _F_warm(x, y, yp - eps)) / (2.0 * eps)
+# @njit
+# def _Fyp_warm(x, y, yp):
+#     eps = 1e-7 * max(1.0, abs(yp))
+#     if eps < 1e-12:
+#         eps = 1e-7
+#     return (_F_warm(x, y, yp + eps) - _F_warm(x, y, yp - eps)) / (2.0 * eps)
 
 
 # =============================================================================
