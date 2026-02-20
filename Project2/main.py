@@ -346,32 +346,10 @@ def main():
     # Plotting
     plot_solution(x, w, analytical_func)
     
+    # Error analysis
     if compute_error and analytical_func is not None:
         compute_and_display_error(x, w, analytical_func)
-    # Analysis options
-    do_accuracy, do_stability, do_convergence = analysis_menu()
-    
-    if do_accuracy:
-        print("\nAccuracy test: Not yet implemented.")
-        pass
-    
-    if do_stability:
-        stab_solver = StabilitySolver(F_func, Fy_func, Fyp_func, N, domain, BC)
-        _, it_fdm, hist_fdm = stab_solver.solve_fdm(verbose=True)
 
-        if input("\nPlot stability metrics? (y/n): ").strip().lower() == "y":
-            stab_solver.plot_fdm_all(hist_fdm)
-    
-    if do_convergence is None:
-        do_convergence = input("\nDo you want to see convergence plots? (y/n)\n").lower() == 'y'
-    if do_convergence:
-        print("\nGenerating convergence plots...\n")
-        study = ConvergenceStudy()
-        study.run()
-    else:
-        print("\nSkipping convergence plots.\n")
-    # Error analysis
-    
     # Completion message
     print("\n")
     print_separator()
