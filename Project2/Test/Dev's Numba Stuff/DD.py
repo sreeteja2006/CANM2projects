@@ -3,8 +3,8 @@ import numpy as np
 from numba import njit
 import matplotlib.pyplot as plt
 # from Core.FDM_Solver import FDM_Solver
-from core.Loader import load_config
-from core.FDM_Solver import FDM_Solver
+from Core.Loader import load_config
+from Core.FDM_Solver import FDM_Solver
 
 # --- Main Execution ---
 
