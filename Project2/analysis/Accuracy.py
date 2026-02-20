@@ -89,15 +89,12 @@ class AccuracyAnalysis:
         self.errors  = {}
         self.solver  = None
 
-        # Load reference solution
         self.y_ref = np.loadtxt(ref_path)
         self.x_ref = np.linspace(0.0, 1.0, len(self.y_ref))
 
-        # Setup output directory
         self.PLOTS_DIR = Path(config_path).parent.parent / "outputs" / "plots"
         self.PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Ensure Project2 is importable
         ROOT = os.path.abspath(os.path.join(os.path.dirname(config_path), "..", ".."))
         if ROOT not in sys.path:
             sys.path.insert(0, ROOT)
@@ -109,7 +106,6 @@ class AccuracyAnalysis:
         )
 
     def compute_errors(self):
-        """Run FDM solver for each N and store absolute errors against y_ref."""
         self.errors = {}
         for N in self.Ns:
             self.solver.set_N(N)
@@ -121,7 +117,6 @@ class AccuracyAnalysis:
         return self.errors
 
     def plot(self, save=True, show=True):
-        """Plot all error curves on a single semilogy figure."""
         if not self.errors:
             raise RuntimeError("No errors to plot. Run compute_errors() first.")
 
