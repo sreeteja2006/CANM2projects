@@ -11,7 +11,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from Core.Loader import load_config
+from core.Loader import load_config
 
 # Ensure output plots go into Project2/outputs/plots
 PLOTS_DIR = Path(__file__).parent.parent / "outputs" / "plots"
