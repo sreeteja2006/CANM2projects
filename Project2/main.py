@@ -306,6 +306,29 @@ def main():
     print(f"BC Right: {BC[1][0]}*y + {BC[1][1]}*y' + {BC[1][2]} = 0")
     print()
     
+    # Analysis options
+    do_accuracy, do_stability, do_convergence = analysis_menu()
+    
+    if do_accuracy:
+        print("\nAccuracy test: Not yet implemented.")
+        pass
+    
+    if do_stability:
+        stab_solver = StabilitySolver(F_func, Fy_func, Fyp_func, N, domain, BC)
+        w, it_fdm, hist_fdm = stab_solver.solve_fdm()
+
+        if input("\nPlot stability metrics? (y/n): ").strip().lower() == "y":
+            stab_solver.plot_fdm_all(hist_fdm)
+    
+    if do_convergence is None:
+        do_convergence = input("\nDo you want to see convergence plots? (y/n)\n").lower() == 'y'
+    if do_convergence:
+        print("\nGenerating convergence plots...\n")
+        study = ConvergenceStudy()
+        study.run()
+    else:
+        print("\nSkipping convergence plots.\n")
+    
     # Solve the problem
     print("\n--- Solving BVP ---")
     try:
