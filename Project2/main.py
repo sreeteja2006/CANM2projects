@@ -11,6 +11,7 @@ from pathlib import Path
 
 from core.Loader import load_config
 from core.FDM_Solver import FDM_Solver
+from Project2.analysis.Convergence import ConvergenceStudy
 
 
 def print_separator(char="=", length=70):
@@ -317,9 +318,14 @@ def main():
         print("Stability test: Not yet implemented.")
         pass
     
+    if do_convergence is None:
+        do_convergence = input("\nDo you want to see convergence plots? (y/n)\n").lower() == 'y'
     if do_convergence:
-        print("Convergence test: Not yet implemented.")
-        pass
+        print("\nGenerating convergence plots...\n")
+        study = ConvergenceStudy()
+        study.run()
+    else:
+        print("\nSkipping convergence plots.\n")
     
     # Solve the problem
     print("\n--- Solving BVP ---")
