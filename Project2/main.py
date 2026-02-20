@@ -12,6 +12,7 @@ from core.Loader import load_config
 from core.FDM_Solver import FDM_Solver
 from analysis.Convergence import ConvergenceStudy
 from analysis.stability import StabilitySolver
+from analysis.Accuracy import AccuracyAnalysis
 
 def print_separator(char="=", length=70):
     """Print a separator line."""
@@ -310,8 +311,9 @@ def main():
     do_accuracy, do_stability, do_convergence = analysis_menu()
     
     if do_accuracy:
-        print("\nAccuracy test: Not yet implemented.")
-        pass
+        print("\nPerforming accuracy analysis...")
+        acc_analysis = AccuracyAnalysis("configs/config.json", "reference_solution.txt")
+        acc_analysis.run()
     
     if do_stability:
         stab_solver = StabilitySolver(F_func, Fy_func, Fyp_func, N, domain, BC)
