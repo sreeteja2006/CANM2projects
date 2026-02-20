@@ -307,6 +307,26 @@ def main():
     print(f"BC Right: {BC[1][0]}*y + {BC[1][1]}*y' + {BC[1][2]} = 0")
     print()
     
+    # Solve the problem
+    print("\n--- Solving BVP ---")
+    try:
+        solver = FDM_Solver(N=N, domain=domain, F=F_func, Fy=Fy_func, Fyp=Fyp_func, BC=BC)
+        w = solver.solver(tol=tol, max_iter=max_iter)
+        x = np.linspace(domain[0], domain[1], N + 1)
+        print("Solution completed successfully.\n")
+    except Exception as e:
+        print(f"\nError during solving: {e}")
+        sys.exit(1)
+    
+    # Output handling
+    output_menu(x, w, analytical_func)
+    
+    # Plotting
+    plot_solution(x, w, analytical_func)
+    
+    # Error analysis
+    if compute_error and analytical_func is not None:
+        compute_and_display_error(x, w, analytical_func)
     # Analysis options
     do_accuracy, do_stability, do_convergence = analysis_menu()
     
@@ -331,26 +351,6 @@ def main():
     else:
         print("\nSkipping convergence plots.\n")
     
-    # Solve the problem
-    print("\n--- Solving BVP ---")
-    try:
-        solver = FDM_Solver(N=N, domain=domain, F=F_func, Fy=Fy_func, Fyp=Fyp_func, BC=BC)
-        w = solver.solver(tol=tol, max_iter=max_iter)
-        x = np.linspace(domain[0], domain[1], N + 1)
-        print("Solution completed successfully.\n")
-    except Exception as e:
-        print(f"\nError during solving: {e}")
-        sys.exit(1)
-    
-    # Output handling
-    output_menu(x, w, analytical_func)
-    
-    # Plotting
-    plot_solution(x, w, analytical_func)
-    
-    # Error analysis
-    if compute_error and analytical_func is not None:
-        compute_and_display_error(x, w, analytical_func)
 
     # Completion message
     print("\n")
