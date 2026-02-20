@@ -433,13 +433,13 @@ def compute_analytical_error(x, h):
 # =============================================================================
 
 if __name__ == "__main__":
-    print("FDM Solver with Numba @njit (aligned with FDM_Solver class)")
-    print("=" * 60)
-    print(f"Domain:      [{X_START}, {X_END}]")
-    print(f"Grid points: {N + 1}  (N = {N} intervals)")
-    print(f"Left  BC:    {BC_LEFT_A}*y + {BC_LEFT_B}*y' + {BC_LEFT_C} = 0")
-    print(f"Right BC:    {BC_RIGHT_A}*y + {BC_RIGHT_B}*y' + {BC_RIGHT_C} = 0")
-    print(f"Config:      {config_path}\n")
+    # print("FDM Solver with Numba @njit (aligned with FDM_Solver class)")
+    # print("=" * 60)
+    # print(f"Domain:      [{X_START}, {X_END}]")
+    # print(f"Grid points: {N + 1}  (N = {N} intervals)")
+    # print(f"Left  BC:    {BC_LEFT_A}*y + {BC_LEFT_B}*y' + {BC_LEFT_C} = 0")
+    # print(f"Right BC:    {BC_RIGHT_A}*y + {BC_RIGHT_B}*y' + {BC_RIGHT_C} = 0")
+    # print(f"Config:      {config_path}\n")
 
     # Setup grid
     x = np.linspace(X_START, X_END, N + 1)
@@ -467,7 +467,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------
     # Solve the actual problem
     # ------------------------------------------------------------------
-    print(f"Solving with tolerance={tol_config}, max_iter={max_iter_config}")
+    # print(f"Solving with tolerance={tol_config}, max_iter={max_iter_config}")
     t0 = time.time()
     w_solution, n_iters, converged = newton_solve_jit(
         F_jit, Fy_jit, Fyp_jit,
@@ -487,12 +487,12 @@ if __name__ == "__main__":
         )
     ref_path = YREF_DIR / "y_ref.txt"
     np.savetxt(ref_path, w_solution[::250], fmt="%.15e")
-    print(f"Reference solution saved to: {ref_path}\n")
+    # print(f"Reference solution saved to: {ref_path}\n")
     # ------------------------------------------------------------------
     # Error analysis and plotting
     # ------------------------------------------------------------------
     if analytical_solution is not None:
-        print("Error Analysis:")
+        # print("Error Analysis:")
         max_error, rms_error = compute_error(w_solution, x)
         print(f"  Max absolute error: {max_error:.8e}")
         print(f"  RMS error:          {rms_error:.8e}\n")
@@ -547,16 +547,3 @@ if __name__ == "__main__":
 
     else:
         print("No analytical solution available\n")
-
-        # plt.figure(figsize=(8.85, 6))
-        # plt.plot(x, w_solution, 'b-', linewidth=2, label='FDM Solution')
-        # plt.xlabel('x')
-        # plt.ylabel('y')
-        # plt.title('FDM BVP Numerical Solution')
-        # plt.grid(True, alpha=0.3)
-        # plt.legend()
-        # plt.tight_layout()
-        # save_path = PLOTS_DIR / 'FDM_Solution.png'
-        # plt.savefig(save_path, dpi=150)
-        # print(f"Plot saved to: {save_path}")
-        # plt.show()

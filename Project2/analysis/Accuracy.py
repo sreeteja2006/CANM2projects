@@ -22,20 +22,9 @@ from Project2.Core.FDM_Solver import FDM_Solver
 PLOTS_DIR = Path(__file__).parent.parent / "outputs" / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-	# def F(x, y, yp):
-	# # 	# y'' = F(x,y,y') used in reference implementation
-	# 	return -(yp ** 2) / (y + 1e-4)
-
 path = os.path.join(os.path.dirname(__file__), "y_ref.txt")
 y_ref = np.loadtxt(path)
 x_ref = np.linspace(0.0, 1.0, len(y_ref))
-
-
-# Load reference solution
-# y_ref, x_ref = load_reference()
-
-	# Boundary conditions: y(0)=0, y(1)=1 encoded as a*y + b*y' + c = 0
-# BC = np.array([[1.0, 0.0, 0.0], [1.0, 0.0, -1.0]])
 
 Ns = [10, 100, 1000, 10000]
 errors = {}
@@ -54,16 +43,15 @@ for N in Ns:
 	# Plot all error curves on one figure
 plt.figure(figsize=(10, 6))
 for N, (x, err) in errors.items():
-	plt.plot(x, err, label=f"N={N}")
+	plt.semilogy(x, err, label=f"N={N}")
 plt.xlabel("x")
-plt.ylabel("Absolute Error |$y_N$ - $y_ref$|")
-plt.title("Absolute Error of FDM solutions for various N values")
+plt.ylabel("Absolute Error |$y_N$ - $y_{ref}$|")
+plt.title("Absolute Error of FDM solutions for various N values (log scale)")
 plt.legend()
-plt.grid(True)
+plt.grid(True, which="both", alpha=0.3)
 plt.tight_layout()
 save_path = PLOTS_DIR / 'Errors for various N values.png'
 plt.savefig(save_path, dpi=150)
-print(f"\nPlot saved to: {save_path}")
 plt.show()
 
 # Print RMS and Max error for each N

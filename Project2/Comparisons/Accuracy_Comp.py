@@ -30,9 +30,6 @@ PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
 f_2 = njit(F_func)
 
-# @njit
-# def f_2(x, u_0, u_1):
-#     return -(u_1)**2/(u_0+1e-4)
 @njit
 def f_1(x, u_0, u_1):
     return u_1
@@ -206,7 +203,7 @@ def SecantMethod(x, nx, h, y_0, ydash1_0, ydash2_0, y_1, tol=1e-6, N=100, Method
 
     ystart = s_1*eps
     sol,x = RK4(x, nx, h, ystart, s_1)
-    print(f"    Secant iterations: {no_of_iterations},  final BC error: {abs(y_1 - sol[nx]):.2e}")
+    # print(f"    Secant iterations: {no_of_iterations},  final BC error: {abs(y_1 - sol[nx]):.2e}")
     return sol,x
 
 # =============================================================================
@@ -252,24 +249,24 @@ Ns = [1000, 10000, 100000, 1000000]
 all_errors = {N: {} for N in Ns}
 
 for N in Ns:
-    print(f"\n{'='*50}")
-    print(f"  N = {N}")
-    print(f"{'='*50}")
+    # print(f"\n{'='*50}")
+    # print(f"  N = {N}")
+    # print(f"{'='*50}")
     x_grid       = np.linspace(domain[0], domain[1], N + 1)
     h            = (domain[1] - domain[0]) / N
     y_ref_interp = np.interp(x_grid, x_ref, y_ref)
 
     # ---- FDM ----
-    print("  FDM...")
+    # print("  FDM...")
     fdm_solver.set_N(N)
     w_fdm = fdm_solver.solver(tol=tol_config, max_iter=max_iter_config)
     err_fdm = np.abs(w_fdm - y_ref_interp)
-    print(f"    max={np.max(err_fdm):.2e},  RMS={np.sqrt(np.mean(err_fdm**2)):.2e}")
+    # print(f"    max={np.max(err_fdm):.2e},  RMS={np.sqrt(np.mean(err_fdm**2)):.2e}")
     all_errors[N]["FDM"] = (x_grid, err_fdm)
 
     # ---- Shooting methods ----
     for name, Method in shooting_methods.items():
-        print(f"  {name}...")
+        # print(f"  {name}...")
         # x grid starts at eps (singularity avoidance)
         x_shoot    = np.linspace(eps, domain[1], N + 1)
         h_shoot = (domain[1] - eps) / N      # <-- matched to shooting grid
@@ -289,12 +286,12 @@ for N in Ns:
         err      = np.abs(w_interp - y_ref_interp)
 
         finite_err = err[np.isfinite(err) & (err > 0)]
-        if len(finite_err) > 0:
-            print(f"    max={np.max(finite_err):.2e},  RMS={np.sqrt(np.mean(finite_err**2)):.2e},  valid_pts={len(finite_err)}/{N+1}")
-        else:
-            print(f"    WARNING: No valid error points — method likely diverged at this N")
-        print("Value of w_interp at x=0:", w_interp[0], "(should be close to y_left =", y_left, ")")
-        print("Value of w_interp at x=1:", w_interp[-1], "(should be close to y_right =", y_right, ")")
+        # if len(finite_err) > 0:
+        #     print(f"    max={np.max(finite_err):.2e},  RMS={np.sqrt(np.mean(finite_err**2)):.2e},  valid_pts={len(finite_err)}/{N+1}")
+        # else:
+        #     print(f"    WARNING: No valid error points — method likely diverged at this N")
+        # print("Value of w_interp at x=0:", w_interp[0], "(should be close to y_left =", y_left, ")")
+        # print("Value of w_interp at x=1:", w_interp[-1], "(should be close to y_right =", y_right, ")")
         all_errors[N][name] = (x_grid, err)
 
 # =============================================================================
@@ -313,8 +310,6 @@ for ax, N in zip(axes.flat, Ns):
         x_grid, err = all_errors[N][name]
         s = method_styles[name]
 
-        # Only plot finite, positive values — semilogy silently drops the
-        # entire line if any NaN/Inf/zero is present without this mask
         valid = np.isfinite(err) & (err > 0)
         if not np.any(valid):
             print(f"  PLOT WARNING: Skipping {name} at N={N} (no valid points)")
@@ -337,14 +332,14 @@ for ax, N in zip(axes.flat, Ns):
 plt.tight_layout()
 save_path = PLOTS_DIR / "Error_Comparison_All_Methods.png"
 plt.savefig(save_path, dpi=150, bbox_inches="tight")
-print(f"\nPlot saved: {save_path}")
+# print(f"\nPlot saved: {save_path}")
 plt.show()
 
 # =============================================================================
 # Summary table: RMS and Max error for every method x N
 # =============================================================================
 
-print("\n" + "=" * 85)
+print("\n" + "=" * 110)
 print(f"{'Method':<8}", end="")
 for N in Ns:
     print(f"  {'N='+str(N):<24}", end="")
@@ -353,7 +348,7 @@ print(f"{'':8}", end="")
 for N in Ns:
     print(f"  {'RMS':<12}{'Max':<12}", end="")
 print()
-print("-" * 85)
+print("-" *110)
 
 for name in method_order:
     print(f"{name:<8}", end="")
@@ -368,5 +363,4 @@ for name in method_order:
             print(f"  {'DIVERGED':<12}{'DIVERGED':<12}", end="")
     print()
 
-print("=" * 85)
-# print(f_1(0,0,1))
+print("=" *110 )
