@@ -343,7 +343,7 @@ class analysis:
         Returns:
             tuple: (y_ref, x_ref) where y_ref is the solution and x_ref is the grid it was sampled on.
         """
-        y_ref_path = Path(__file__).resolve().parent / "y_ref.txt"
+        y_ref_path =  Path(__file__).resolve().parent / "y_ref.txt"
         
         if not y_ref_path.exists():
             raise FileNotFoundError(f"Reference solution file not found: {y_ref_path}")
