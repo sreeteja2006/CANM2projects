@@ -312,7 +312,7 @@ def main():
     
     if do_accuracy:
         print("\nPerforming accuracy analysis...")
-        acc_analysis = AccuracyAnalysis("configs/config.json", "reference_solution.txt")
+        acc_analysis = AccuracyAnalysis("configs/config.json", "analysis/y_ref.txt")
         acc_analysis.run()
     
     if do_stability:
