@@ -12,7 +12,7 @@ from pathlib import Path
 from core.Loader import load_config
 from core.FDM_Solver import FDM_Solver
 from Project2.analysis.Convergence import ConvergenceStudy
-
+from Project2.analysis.stability import StabilitySolver
 
 def print_separator(char="=", length=70):
     """Print a separator line."""
@@ -315,8 +315,10 @@ def main():
         pass
     
     if do_stability:
-        print("Stability test: Not yet implemented.")
-        pass
+        stab_solver = StabilitySolver(N=N, domain=domain, F=F_func, Fy=Fy_func, Fyp=Fyp_func, BC=BC)
+        w, hist_fdm, hist_sh = stab_solver.solve_fdm(verbose=True)
+        if(input("\nPlot stability metrics? (y/n): ").lower() == 'y'):
+            stab_solver.plot_fdm_all(hist_fdm)
     
     if do_convergence is None:
         do_convergence = input("\nDo you want to see convergence plots? (y/n)\n").lower() == 'y'
