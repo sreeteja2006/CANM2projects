@@ -1,22 +1,3 @@
-"""
-FDM Solver with Numba @njit for CPU JIT Compilation
-=====================================================
-
-Fully aligned with FDM_Solver class:
-  - General BCs of the form: a*y + b*y' + c = 0
-  - Jacobian matches Function_Generator tridiagonal terms
-  - Residual matches Residual class structure
-  - Newton's method matches FDM_Solver.solver()
-  - TDMA matches TDMA module
-
-All Numba errors fixed:
-  - No global Python functions referenced inside @njit
-  - No global scalar constants referenced inside @njit
-  - F, Fy, Fyp passed explicitly as @njit dispatchers
-  - BC coefficients passed explicitly as scalars
-  - None-branches for Fy/Fyp resolved before @njit land
-"""
-
 import numpy as np
 from numba import njit
 import matplotlib.pyplot as plt

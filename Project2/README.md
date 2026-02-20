@@ -28,11 +28,12 @@ The main program saves numerical/analytical plots and optional CSV exports to th
 
 ## Folder Structure (Key Parts)
 
-- Core solver code: [Project2/Core](Project2/Core)
+- Core solver code: [Project2/core](Project2/core)
 - Main entry point: [Project2/main.py](Project2/main.py)
 - Configuration: [Project2/configs](Project2/configs)
 - Outputs: [Project2/outputs](Project2/outputs)
 - Analysis scripts: [Project2/analysis](Project2/analysis)
+- Comparison scripts: [Project2/comparisons](Project2/comparisons)
 - Test scripts: [Project2/Test](Project2/Test)
 
 ## Question1 Folder
@@ -55,6 +56,30 @@ To import the solver function:
 ```python
 from question1.q1_solver import question_1_solver
 ```
+
+## Comparisons Folder
+
+[Project2/comparisons](Project2/comparisons) contains scripts to compare the accuracy, convergence, and stability characteristics of the Finite Difference Method (FDM) with the Shooting Method.
+
+The comparison modules include:
+
+- **Accuracy Comparison** ([Project2/comparisons/Accuracy_Comp.py](Project2/comparisons/Accuracy_Comp.py)): Compares the numerical accuracy of FDM against analytical and shooting method solutions. Uses numba-optimized RK2, RK4, and ABM schemes for efficient computation.
+
+- **Convergence Comparison** ([Project2/comparisons/Convergence_compare.py](Project2/comparisons/Convergence_compare.py)): Analyzes convergence behavior by studying solution quality as grid density increases. Creates convergence plots to visualize both FDM and shooting method performance.
+
+- **Stability Comparison** ([Project2/comparisons/stability_comp.py](Project2/comparisons/stability_comp.py)): Examines numerical stability of both methods by comparing condition numbers, singular values, and amplification factors across iterations.
+
+### Usage
+
+These comparison scripts can be run independently to analyze method behavior:
+
+```python
+from comparisons.stability_comp import StabilityComparison
+from comparisons.Accuracy_Comp import *
+from comparisons.Convergence_compare import *
+```
+
+Or integrate them into your workflow to understand how FDM and Shooting methods perform on your specific problem.
 
 ## Using FDM_Solver with Custom Jacobian and Residual
 
