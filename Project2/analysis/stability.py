@@ -44,9 +44,7 @@ class StabilitySolver:
         else:
             self.w = np.array(w0, dtype=float)
 
-    # =========================
-    # Basic helper functions
-    # =========================
+
 
     @staticmethod
     def _full_tridiag(d, l, u):
@@ -351,4 +349,4 @@ class StabilitySolver:
 
         plt.tight_layout()
         plt.savefig(out_path, dpi=200, bbox_inches="tight")
-        plt.close()
+        plt.show()
