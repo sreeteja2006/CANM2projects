@@ -1,4 +1,4 @@
 # CANM2projects
 
-This Repo contains all the CANM 2 projects we made through SEM-4  
+The projects done by our team for our Numerical Methods coursework.
 
